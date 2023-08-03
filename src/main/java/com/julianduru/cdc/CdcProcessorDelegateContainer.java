@@ -53,8 +53,9 @@ public class CdcProcessorDelegateContainer {
     private Optional<CdcProcessorDelegate> getDelegateForPayload(Payload payload, boolean throwException) {
         List<CdcProcessorDelegate> delegates = processorDelegates.stream()
             .filter(
-                delegate -> delegate.supports(payload))
-            .collect(Collectors.toList());
+                delegate -> delegate.supports(payload)
+            )
+            .toList();
 
         if (delegates.isEmpty()) {
             if (throwException) {
