@@ -1,0 +1,70 @@
+
+code.config.connector:
+  url: http://localhost:11112
+  connectors:
+    - name: cdc_wclms_connector
+      databaseVendor: MYSQL
+      databaseHost: 10.245.79.224
+      databasePort: 3306
+      databaseUsername: moniesend
+      databasePassword: 0uRM0ni3s3nD
+      databaseIncludeList:
+        - wclms
+      tableIncludeList:
+        - wclms.wp_portfolio_level
+        - wclms.wp_field_credit_officer
+      kafkaBootstrapServers:
+        - mpt-kakfka-cluster-kafka-brokers.moniepoint.svc.cluster.local:9092
+
+
+
+queue:
+  config:
+    background-activity:
+      enabled: false
+
+    consumers:
+      default-group-id: group-id
+
+    topics:
+      partitions: 5
+      replication: 1
+
+    kafka:
+      security:
+        protocol: "SASL_SSL"
+      sasl:
+        mechanism: "PLAIN"
+        jaas:
+          config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='6JM6UQM7HGF6OGL2' password='QJ+lnJ4f63PqaZWl9jqeE4raaPZGd7jKsGxQxL7p72KT5xY3iJpFHJPhd+Lb+Y91';"
+
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/cdc_db?createDatabaseIfNotExist=true&serverTimezone=UTC%2B1}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  kafka:
+    bootstrap-servers: localhost:33333
+    consumer:
+      auto-offset-reset: earliest
+    producer:
+      properties:
+        request.timeout.ms: 2000
+
+
+  jpa:
+    hibernate.ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/migration.queue_integration.xml
+
+

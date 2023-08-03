@@ -1,0 +1,74 @@
+
+code.config.connector:
+  url: http://localhost:8083
+  source-connectors:
+    - name: cdc_connector
+      connectorType: MYSQL_SOURCE
+      databaseHost: mysqldb
+      databasePort: 3306
+      databaseUsername: root
+      databasePassword: 1234567890
+      databaseIncludeList:
+        - employee
+      tableIncludeList:
+        - employee.user
+      kafkaBootstrapServers:
+        - kafka:9092
+
+
+
+
+logging:
+  level:
+    root: INFO
+
+
+queue:
+  config:
+    background-activity:
+      enabled: false
+
+    consumers:
+      default-group-id: group-id
+
+    topics:
+      partitions: 5
+      replication: 1
+
+#    kafka:
+#      security:
+#        protocol: "SASL_SSL"
+#      sasl:
+#        mechanism: "PLAIN"
+#        jaas:
+#          config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='6JM6UQM7HGF6OGL2' password='QJ+lnJ4f63PqaZWl9jqeE4raaPZGd7jKsGxQxL7p72KT5xY3iJpFHJPhd+Lb+Y91';"
+
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysqldb:33080/employee?createDatabaseIfNotExist=true&serverTimezone=UTC%2B1}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    initialization-mode: always
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+    producer:
+      properties:
+        request.timeout.ms: 2000
+
+
+  jpa:
+    hibernate.ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+
+
+  sql:
+    init:
+      mode: always

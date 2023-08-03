@@ -1,0 +1,29 @@
+
+code.config.connector:
+  url: http://localhost:8083
+  source-connectors:
+    - name: cdc_connector
+      connectorType: MYSQL_SOURCE
+      databaseHost: mysqldb
+      databasePort: 3306
+      databaseUsername: root
+      databasePassword: 1234567890
+      databaseIncludeList:
+        - employee
+      tableIncludeList:
+        - employee.user
+      kafkaBootstrapServers:
+        - kafka:9092
+      includeSchemas: true
+      disableDefaultConsumer: true
+  sink-connectors:
+    - name: sink_connector
+      connectorType: JDBC_SINK
+      topics: cdc_connector.employee.user
+      url: "jdbc:mysql://mysqldb:3306/employee_database_sink?createDatabaseIfNotExist=true&serverTimezone=UTC"
+      username: root
+      password: 1234567890
+
+
+
+
