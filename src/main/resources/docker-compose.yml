@@ -1,0 +1,98 @@
+
+version: '3.1'
+
+
+services:
+
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - docker-net
+
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    networks:
+      - docker-net
+
+
+  akhq:
+    image: tchiotludo/akhq
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:9092"
+              connect:
+                - name: "connect"
+                  url: "http://connect:8083"
+    ports:
+      - "8181:8080"
+    networks:
+      - docker-net
+
+
+  mysqldb:
+    image: mysql:8.0
+    restart: always
+    healthcheck:
+      test: "mysql $$MYSQL_DATABASE -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1;'"
+      interval: 10s
+      timeout: 300s
+      retries: 20
+    environment:
+      - MYSQL_DATABASE=employee
+      - MYSQL_ROOT_PASSWORD=1234567890
+    ports:
+      - "33080:3306"
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - docker-net
+
+
+  connect:
+    image: quay.io/debezium/connect:2.2
+    restart: always
+    depends_on:
+      - kafka
+    ports:
+      - "8083:8083"
+      - "5005:5005"
+    links:
+      - kafka
+      - mysqldb
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=connect_configs
+      - OFFSET_STORAGE_TOPIC=connect_offsets
+      - STATUS_STORAGE_TOPIC=source_connect_statuses
+    networks:
+      - docker-net
+
+
+volumes:
+  db:
+
+
+networks:
+  docker-net:
+
+
