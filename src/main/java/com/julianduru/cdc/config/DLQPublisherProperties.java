@@ -1,6 +1,6 @@
 package com.julianduru.cdc.config;
 
-import com.moniepoint.cdc.CdcDlqProducerRecordFactory;
+import com.julianduru.cdc.CdcDlqProducerRecordFactory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

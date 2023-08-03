@@ -1,9 +1,9 @@
 package com.julianduru.cdc.bootstrap;
 
-import com.moniepoint.cdc.CdcConsumer;
-import com.moniepoint.cdc.CdcDlqConsumer;
-import com.moniepoint.cdc.Consumer;
-import com.moniepoint.cdc.config.*;
+import com.julianduru.cdc.CdcConsumer;
+import com.julianduru.cdc.CdcDlqConsumer;
+import com.julianduru.cdc.Consumer;
+import com.julianduru.cdc.config.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -101,7 +101,7 @@ public class ConnectorsBootstrapper {
         List<SinkConnectorRequest> requests = connectorConfig.getSinkConnectors()
             .stream()
             .map(SinkConnectorRequest::new)
-            .collect(Collectors.toList());
+            .toList();
 
         for (SinkConnectorRequest request : requests) {
             installConnector(request);
@@ -182,6 +182,6 @@ public class ConnectorsBootstrapper {
     }
 
 
-
 }
+
 

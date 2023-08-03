@@ -1,5 +1,9 @@
 package com.julianduru.cdc;
 
+import com.julianduru.cdc.data.ChangeType;
+import com.julianduru.cdc.data.OperationStatus;
+import com.julianduru.cdc.data.Payload;
+
 import java.util.function.BiPredicate;
 
 /**

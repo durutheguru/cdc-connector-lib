@@ -1,5 +1,10 @@
 package com.julianduru.cdc;
 
+import com.julianduru.cdc.data.CdcMessage;
+import com.julianduru.cdc.data.OperationStatus;
+import com.julianduru.cdc.data.Payload;
+import com.julianduru.cdc.exception.CdcProcessingException;
+import com.julianduru.cdc.util.JSONUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

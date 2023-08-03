@@ -1,7 +1,8 @@
-package com.julianduru.cdc;
+package com.julianduru.cdc.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.julianduru.cdc.util.JSONUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

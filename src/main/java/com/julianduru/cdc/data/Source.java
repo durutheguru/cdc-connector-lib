@@ -1,4 +1,4 @@
-package com.julianduru.cdc;
+package com.julianduru.cdc.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

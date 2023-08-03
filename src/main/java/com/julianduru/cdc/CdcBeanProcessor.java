@@ -1,6 +1,10 @@
 package com.julianduru.cdc;
 
-import com.moniepoint.cdc.annotation.ChangeConsumer;
+
+import com.julianduru.cdc.annotation.ChangeConsumer;
+import com.julianduru.cdc.data.ChangeType;
+import com.julianduru.cdc.data.OperationStatus;
+import com.julianduru.cdc.data.Payload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;

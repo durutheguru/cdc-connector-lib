@@ -1,6 +1,6 @@
 package com.julianduru.cdc.config;
 
-import com.moniepoint.cdc.CdcDlqProducerRecordFactory;
+import com.julianduru.cdc.CdcDlqProducerRecordFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

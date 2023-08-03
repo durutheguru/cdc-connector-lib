@@ -1,6 +1,6 @@
 package com.julianduru.cdc.annotation;
 
-import com.moniepoint.cdc.data.ChangeType;
+import com.julianduru.cdc.data.ChangeType;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.ElementType;

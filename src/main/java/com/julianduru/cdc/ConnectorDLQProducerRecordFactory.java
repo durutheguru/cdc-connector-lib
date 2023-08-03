@@ -1,6 +1,11 @@
 package com.julianduru.cdc;
 
-import com.moniepoint.cdc.config.CdcDlqPrefixHandler;
+import com.julianduru.cdc.config.CdcDlqPrefixHandler;
+import com.julianduru.cdc.data.CdcMessage;
+import com.julianduru.cdc.data.Payload;
+import com.julianduru.cdc.exception.CdcProcessingException;
+import com.julianduru.cdc.util.JSONUtil;
+import org.apache.kafka.clients.consumer.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;

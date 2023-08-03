@@ -1,6 +1,7 @@
-package com.julianduru.cdc;
+package com.julianduru.cdc.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.julianduru.cdc.util.HashUtil;
 import lombok.Data;
 
 import java.util.Arrays;

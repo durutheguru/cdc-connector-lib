@@ -1,4 +1,4 @@
-package com.julianduru.cdc;
+package com.julianduru.cdc.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

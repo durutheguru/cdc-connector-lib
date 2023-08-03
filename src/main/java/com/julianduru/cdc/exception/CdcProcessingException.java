@@ -1,5 +1,6 @@
-package com.julianduru.cdc;
+package com.julianduru.cdc.exception;
 
+import com.julianduru.cdc.data.CdcMessage;
 import lombok.Getter;
 
 /**
