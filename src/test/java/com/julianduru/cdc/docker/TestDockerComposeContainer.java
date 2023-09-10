@@ -30,7 +30,11 @@ public class TestDockerComposeContainer extends DockerComposeContainer {
         );
         withExposedService(
             "connect_1", 8083,
-            Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(300))
+            Wait.forHttp("/connectors/")
+                .forStatusCodeMatching(
+                    statusCode -> statusCode >= 200 && statusCode < 300
+                )
+                .withStartupTimeout(Duration.ofSeconds(300))
         );
         withTailChildContainers(true);
     }

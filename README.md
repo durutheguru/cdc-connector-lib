@@ -251,7 +251,7 @@ We also have the dlq topic: `dlq.group-id.cdc_connector.employee.user` where we'
 
 The group_id of the consumer that failed to consume the message is included in the topic name, so consumers with different group_ids don't reference the same dlq topic. Group Id is configured using the property: `queue.config.consumers.default-group-id`.
 
-There are 2 processors defined in the test package `com.moniepoint.cdc.changeconsumer`: `CreateUserChangeProcessor`, `UpdateUserChangeProcessor`.
+There are 2 processors defined in the test package `com.julianduru.cdc.changeconsumer`: `CreateUserChangeProcessor`, `UpdateUserChangeProcessor`.
 Inspect their code to gain an understanding of what they do.
 
 ```

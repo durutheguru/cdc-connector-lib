@@ -31,7 +31,7 @@ public class UpdateUserChangeProcessor {
     public OperationStatus process(String reference, Payload payload) {
         log.info("Payload: {}", JSONUtil.asJsonString(payload, ""));
         dataCaptureMap.put(reference, payload);
-        return OperationStatus.success();
+        return OperationStatus.failure();
     }
 
 

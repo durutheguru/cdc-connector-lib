@@ -21,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
     }
 )
 @EnableAutoConfiguration
-@ActiveProfiles("db-sync")
+//@ActiveProfiles("db-sync")
 public class DatabaseSyncTest extends BaseServiceIntegrationTest {
 
 

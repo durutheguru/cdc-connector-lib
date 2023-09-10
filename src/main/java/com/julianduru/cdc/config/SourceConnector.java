@@ -57,7 +57,7 @@ public class SourceConnector {
     private List<String> kafkaBootstrapServers;
 
 
-    private boolean includeSchemas;
+    private boolean includeSchemas = true;
 
 
     private boolean disableDefaultConsumer;

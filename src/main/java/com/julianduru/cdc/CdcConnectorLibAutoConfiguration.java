@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
  * created by Julian Duru on 29/04/2023
  */
 @Configuration
-@ComponentScan(basePackages = "com.moniepoint.cdc")
+@ComponentScan(basePackages = "com.julianduru.cdc")
 @EnableConfigurationProperties
 public class CdcConnectorLibAutoConfiguration {
 
