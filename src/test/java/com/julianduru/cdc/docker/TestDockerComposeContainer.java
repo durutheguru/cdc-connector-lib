@@ -25,6 +25,10 @@ public class TestDockerComposeContainer extends DockerComposeContainer {
                 .withStartupTimeout(Duration.ofSeconds(600))
         );
         withExposedService(
+            "postgres_1", 5432,
+            Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(300))
+        );
+        withExposedService(
             "kafka_1", 9092,
             Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(300))
         );
@@ -34,7 +38,7 @@ public class TestDockerComposeContainer extends DockerComposeContainer {
                 .forStatusCodeMatching(
                     statusCode -> statusCode >= 200 && statusCode < 300
                 )
-                .withStartupTimeout(Duration.ofSeconds(300))
+                .withStartupTimeout(Duration.ofSeconds(600))
         );
         withTailChildContainers(true);
     }

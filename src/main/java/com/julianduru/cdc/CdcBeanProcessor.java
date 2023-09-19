@@ -12,6 +12,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 /**
  * created by Julian Duru on 24/02/2023
@@ -21,6 +22,8 @@ import java.lang.reflect.Method;
 @RequiredArgsConstructor
 public class CdcBeanProcessor implements BeanPostProcessor {
 
+
+    private final DefaultQueryHandlerContainer queryHandlerContainer;
 
     private final CdcProcessorDelegateContainer consumerContainer;
 
@@ -56,17 +59,24 @@ public class CdcBeanProcessor implements BeanPostProcessor {
         Class<?> beanClass = bean.getClass();
 
         try {
-            Method queryMethod = beanClass.getMethod(ChangeConsumer.QUERY_METHOD_NAME, String.class, Payload.class);
-            Method processMethod = beanClass.getMethod(ChangeConsumer.PROCESS_METHOD_NAME, String.class, Payload.class);
+            var queryMethod = getQueryMethod(bean);
+            var processMethod = Optional.of(
+                beanClass.getMethod(
+                    ChangeConsumer.PROCESS_METHOD_NAME, String.class, Payload.class
+                )
+            );
 
             validateMethodReturnType(queryMethod, processMethod);
-            doRegistration(consumer, bean, queryMethod, processMethod);
+            doRegistration(
+                consumer, bean,
+                queryMethod.isEmpty() ? null : queryMethod.get(),
+                processMethod.get()
+            );
         }
         catch (NoSuchMethodException ex) {
             throw new IllegalStateException(
                 String.format(
-                    "Consumer {%s} must have a query and process method. Supported signatures: %n" +
-                    "- OperationStatus query(String reference, Payload payload) %n" +
+                    "Consumer {%s} must have a process method. Supported signatures: %n" +
                     "- OperationStatus process(String reference, Payload payload)%n%n",
                     beanClass.getName()
                 )
@@ -75,8 +85,30 @@ public class CdcBeanProcessor implements BeanPostProcessor {
     }
 
 
-    private void validateMethodReturnType(Method...methods) {
-        for (Method method: methods) {
+    private Optional<Method> getQueryMethod(Object bean) {
+        try {
+            Class<?> beanClass = bean.getClass();
+            return Optional.of(
+                beanClass.getMethod(
+                    ChangeConsumer.QUERY_METHOD_NAME, String.class, Payload.class
+                )
+            );
+        }
+        catch (NoSuchMethodException ex) {
+            log.debug("No query method declared on consumer: {}. Applying default", bean.getClass().getName());
+            return Optional.empty();
+        }
+    }
+
+
+    private void validateMethodReturnType(Optional<Method>...methodOptionals) {
+        for (Optional<Method> methodOptional: methodOptionals) {
+            if (methodOptional.isEmpty()) {
+                continue;
+            }
+
+            Method method = methodOptional.get();
+
             Class<?> methodReturnType = method.getReturnType();
             if (methodReturnType != OperationStatus.class) {
                 throw new IllegalStateException(
@@ -106,12 +138,17 @@ public class CdcBeanProcessor implements BeanPostProcessor {
 
                 @Override
                 public OperationStatus query(String reference, Payload payload) {
-                    try {
-                        return (OperationStatus) queryMethod.invoke(bean, reference, payload);
+                    if (queryMethod != null) {
+                        try {
+                            return (OperationStatus) queryMethod.invoke(bean, reference, payload);
+                        }
+                        catch (Throwable t) {
+                            log.error(t.getMessage(), t);
+                            return OperationStatus.inProgress(t.getMessage());
+                        }
                     }
-                    catch (Throwable t) {
-                        log.error(t.getMessage(), t);
-                        return OperationStatus.inProgress(t.getMessage());
+                    else {
+                        return queryHandlerContainer.defaultQueryHandler(reference, payload);
                     }
                 }
 
@@ -132,7 +169,7 @@ public class CdcBeanProcessor implements BeanPostProcessor {
                 public boolean supports(Payload payload) {
                     try {
                         //TODO: cache 'supports' method to avoid always using reflection and depending on NoSuchMethodException..
-                        Method method = bean.getClass().getMethod(ChangeConsumer.SUPPORTED_PAYLOAD_METHOD_NAME, Payload.class);
+                        Method method = bean.getClass().getMethod(ChangeConsumer.SUPPORTS_PAYLOAD_METHOD_NAME, Payload.class);
                         return (Boolean) method.invoke(bean, payload);
                     }
                     catch (NoSuchMethodException e) {
