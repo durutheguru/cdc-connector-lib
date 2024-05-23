@@ -1,4 +1,5 @@
 
+
 code.config.connector:
   url: http://localhost:8083
   source-connectors:
@@ -14,6 +15,14 @@ code.config.connector:
         - employee.user
       kafkaBootstrapServers:
         - kafka:9092
+  sink-connectors:
+    - name: sink_connector
+      connectorType: JDBC_SINK
+      topics: cdc_connector.employee.user
+      url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+      username: postgres
+      password: password
+
 
 
 
