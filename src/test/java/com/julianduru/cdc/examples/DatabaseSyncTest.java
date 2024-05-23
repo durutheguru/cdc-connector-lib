@@ -21,7 +21,6 @@ import org.springframework.test.context.ActiveProfiles;
     }
 )
 @EnableAutoConfiguration
-//@ActiveProfiles("db-sync")
 public class DatabaseSyncTest extends BaseServiceIntegrationTest {
 
 
@@ -32,7 +31,7 @@ public class DatabaseSyncTest extends BaseServiceIntegrationTest {
             Thread.currentThread().join();
         }
 
-        //TODO: write validations against destination db
+        log.info("Test Complete");
     }
 
 
