@@ -23,17 +23,9 @@ public class CreateUserChangeProcessor {
     private final DataCaptureMap dataCaptureMap;
 
 
-    public OperationStatus query(String reference, Payload payload) {
-        return OperationStatus.pending();
-    }
-
-
     public OperationStatus process(String reference, Payload payload) {
         log.info("Payload: {}", JSONUtil.asJsonString(payload, ""));
         dataCaptureMap.put(reference, payload);
-//        return OperationStatus.failure(
-//            "Failed at this time: " + TimeUtil.DEFAULT_ZONE_DATE_TIME_FORMATTER.format(ZonedDateTime.now())
-//        );
         return OperationStatus.success();
     }
 

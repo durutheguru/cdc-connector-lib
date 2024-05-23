@@ -63,6 +63,14 @@ public class JSONUtil {
     }
 
 
+    public static <T> T fromJsonString(String json, String path, Class<T> klass) throws IOException {
+        var rootNode = objectMapper.readTree(json);
+        var attributesNode = rootNode.at(path);
+
+        return objectMapper.treeToValue(attributesNode, klass);
+    }
+
+
     public static Map<String, String> readJSONMap(String jsonSource) {
         if (!StringUtils.hasText(jsonSource)) {
             return new HashMap<>();

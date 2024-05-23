@@ -1,5 +1,6 @@
 package com.julianduru.cdc;
 
+import com.julianduru.cdc.config.ConnectorConfig;
 import com.julianduru.cdc.data.CdcMessage;
 import com.julianduru.cdc.data.OperationStatus;
 import com.julianduru.cdc.data.Payload;
@@ -27,6 +28,9 @@ public class CdcConsumer implements Consumer {
     private final CdcProcessor cdcProcessor;
 
 
+    private final ConnectorConfig connectorConfig;
+
+
 
     @Override
     public void consume(ConsumerRecord<String, String> record) throws Exception {
@@ -37,7 +41,16 @@ public class CdcConsumer implements Consumer {
             return;
         }
 
-        Payload payload = JSONUtil.fromJsonString(record.value(), Payload.class);
+        Payload payload;
+
+        var sourceConnector = connectorConfig.getConnectorForTopic(record.topic());
+        if (sourceConnector.isPresent() && sourceConnector.get().isIncludeSchemas()) {
+            payload = JSONUtil.fromJsonString(record.value(), "/payload", Payload.class);
+        }
+        else {
+            payload = JSONUtil.fromJsonString(record.value(), Payload.class);
+        }
+
         if (!cdcProcessor.supports(payload)) {
             log.warn("Unsupported payload. Ignoring. {}", payload);
             return;

@@ -2,19 +2,32 @@
 code.config.connector:
   url: http://localhost:11112
   connectors:
-    - name: cdc_wclms_connector
-      databaseVendor: MYSQL
-      databaseHost: 10.245.79.224
+    - name: cdc_connector
+      connectorType: MYSQL_SOURCE
+      databaseHost: mysqldb
       databasePort: 3306
-      databaseUsername: moniesend
-      databasePassword: 0uRM0ni3s3nD
+      databaseUsername: root
+      databasePassword: 1234567890
       databaseIncludeList:
-        - wclms
+        - employee
       tableIncludeList:
-        - wclms.wp_portfolio_level
-        - wclms.wp_field_credit_officer
+        - employee.user
       kafkaBootstrapServers:
-        - mpt-kakfka-cluster-kafka-brokers.moniepoint.svc.cluster.local:9092
+        - kafka:9092
+
+#    - name: cdc_wclms_connector
+#      databaseVendor: MYSQL
+#      databaseHost: 10.245.79.224
+#      databasePort: 3306
+#      databaseUsername: moniesend
+#      databasePassword: 0uRM0ni3s3nD
+#      databaseIncludeList:
+#        - wclms
+#      tableIncludeList:
+#        - wclms.wp_portfolio_level
+#        - wclms.wp_field_credit_officer
+#      kafkaBootstrapServers:
+#        - kafka:9092
 
 
 

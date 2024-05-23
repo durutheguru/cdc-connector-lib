@@ -21,7 +21,7 @@ public @interface ChangeConsumer {
 
     String PROCESS_METHOD_NAME = "process";
 
-    String SUPPORTED_PAYLOAD_METHOD_NAME = "supports";
+    String SUPPORTS_PAYLOAD_METHOD_NAME = "supports";
 
 
     String sourceId();

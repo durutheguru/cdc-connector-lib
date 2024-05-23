@@ -67,6 +67,18 @@ services:
       - docker-net
 
 
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=employee_database_sink
+    networks:
+      - docker-net
+
+
   connect:
     image: quay.io/debezium/connect:2.2
     restart: always
