@@ -4,7 +4,7 @@ import com.julianduru.cdc.config.CdcDlqPrefixHandler;
 import com.julianduru.cdc.data.CdcMessage;
 import com.julianduru.cdc.data.Payload;
 import com.julianduru.cdc.exception.CdcProcessingException;
-import com.julianduru.cdc.util.JSONUtil;
+import com.julianduru.cdc.util.JSON;
 import org.apache.kafka.clients.consumer.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -53,11 +53,11 @@ public class ConnectorDLQProducerRecordFactory implements CdcDlqProducerRecordFa
         }
 
         if (record.topic().startsWith(dlqPrefixHandler.getDLQTopicPrefix())) {
-            CdcMessage message = JSONUtil.fromJsonString(record.value().toString(), CdcMessage.class);
+            CdcMessage message = JSON.fromJsonString(record.value().toString(), CdcMessage.class);
             reference = message.getReference();
         }
         else {
-            Payload payload = JSONUtil.fromJsonString(record.value().toString(), Payload.class);
+            Payload payload = JSON.fromJsonString(record.value().toString(), Payload.class);
             reference = payload.hash();
         }
 
@@ -74,7 +74,7 @@ public class ConnectorDLQProducerRecordFactory implements CdcDlqProducerRecordFa
             getTopicName(topicPartition),
             topicPartition.partition() < 0 ? null : topicPartition.partition(),
             UUID.randomUUID().toString(),
-            JSONUtil.asJsonString(cdcMessage),
+            JSON.stringify(cdcMessage),
             headers
         );
     }

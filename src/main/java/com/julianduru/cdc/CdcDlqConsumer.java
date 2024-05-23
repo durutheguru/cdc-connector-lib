@@ -4,7 +4,7 @@ import com.julianduru.cdc.data.CdcMessage;
 import com.julianduru.cdc.data.OperationStatus;
 import com.julianduru.cdc.data.Payload;
 import com.julianduru.cdc.exception.CdcProcessingException;
-import com.julianduru.cdc.util.JSONUtil;
+import com.julianduru.cdc.util.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,8 +31,8 @@ public class CdcDlqConsumer implements Consumer {
     public void consume(ConsumerRecord<String, String> record) throws Exception {
         log.info("Message received: " + record);
 
-        CdcMessage message = JSONUtil.fromJsonString(record.value(), CdcMessage.class);
-        Payload payload = JSONUtil.fromJsonString(message.getPayload(), Payload.class);
+        CdcMessage message = JSON.fromJsonString(record.value(), CdcMessage.class);
+        Payload payload = JSON.fromJsonString(message.getPayload(), Payload.class);
         if (!cdcProcessor.supports(payload)) {
             log.warn("Unsupported payload. Ignoring. {}", payload);
             return;

@@ -2,7 +2,7 @@ package com.julianduru.cdc.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.julianduru.cdc.util.JSONUtil;
+import com.julianduru.cdc.util.JSON;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,7 +51,7 @@ public class CdcMessage {
             .groupId(groupId)
             .topic(record.topic())
             .reference(payload.hash())
-            .payload(JSONUtil.asJsonString(payload))
+            .payload(JSON.stringify(payload))
             .build();
     }
 

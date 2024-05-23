@@ -59,12 +59,8 @@ public class CdcBeanProcessor implements BeanPostProcessor {
         Class<?> beanClass = bean.getClass();
 
         try {
-            var queryMethod = getQueryMethod(bean);
-            var processMethod = Optional.of(
-                beanClass.getMethod(
-                    ChangeConsumer.PROCESS_METHOD_NAME, String.class, Payload.class
-                )
-            );
+            var queryMethod = getMethod(ChangeConsumer.QUERY_METHOD_NAME, bean, beanClass);
+            var processMethod = getMethod(ChangeConsumer.PROCESS_METHOD_NAME, bean, beanClass);
 
             validateMethodReturnType(queryMethod, processMethod);
             doRegistration(
@@ -85,17 +81,16 @@ public class CdcBeanProcessor implements BeanPostProcessor {
     }
 
 
-    private Optional<Method> getQueryMethod(Object bean) {
+    private Optional<Method> getMethod(String methodName, Object bean, Class<?> beanClass) {
         try {
-            Class<?> beanClass = bean.getClass();
             return Optional.of(
                 beanClass.getMethod(
-                    ChangeConsumer.QUERY_METHOD_NAME, String.class, Payload.class
+                    methodName, String.class, Payload.class
                 )
             );
         }
         catch (NoSuchMethodException ex) {
-            log.debug("No query method declared on consumer: {}. Applying default", bean.getClass().getName());
+            log.debug("No {} method declared on consumer: {}", methodName, bean.getClass().getName());
             return Optional.empty();
         }
     }
