@@ -60,7 +60,8 @@ public abstract class RecordProcessor<T> {
     public Pair<Integer, Integer> process(List<MessageRecord<T>> records) {
         try {
             if (config.isSingleConcurrent()) {
-                return processAsync(records);
+                processAsync(records);
+                return Pair.of(records.size(), 0);
             }
 
             if (config.isConcurrency()) {
@@ -105,15 +106,10 @@ public abstract class RecordProcessor<T> {
     }
 
 
-    private Pair<Integer, Integer> processAsync(List<MessageRecord<T>> records) {
-        List<MessageRecord<T>> successList = new ArrayList<>();
-        List<MessageRecord<T>> failedList = new ArrayList<>();
-
+    private void processAsync(List<MessageRecord<T>> records) {
         for (MessageRecord<T> messageRecord : records) {
-            executor.submit(() -> doProcessing(messageRecord, successList, failedList));
+            executor.submit(() -> doProcessing(messageRecord, null, null));
         }
-
-        return Pair.of(-1, -1);
     }
 
 
@@ -122,12 +118,16 @@ public abstract class RecordProcessor<T> {
             process(messageRecord.object());
 
             eventHandler.handleSuccess(messageRecord);
-            successList.add(messageRecord);
+            if (successList != null) {
+                successList.add(messageRecord);
+            }
         } catch (Exception t) {
             log.error(t.getMessage(), t);
 
             eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
-            failedList.add(messageRecord);
+            if (failedList != null) {
+                failedList.add(messageRecord);
+            }
         }
     }
 
