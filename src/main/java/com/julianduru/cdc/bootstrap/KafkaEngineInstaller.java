@@ -1,6 +1,6 @@
 package com.julianduru.cdc.bootstrap;
 
-import com.julianduru.cdc.CdcConsumer;
+import com.julianduru.cdc.KafkaConsumer;
 import com.julianduru.cdc.Consumer;
 import com.julianduru.cdc.config.*;
 import lombok.RequiredArgsConstructor;
@@ -43,13 +43,12 @@ public class KafkaEngineInstaller implements EngineInstaller {
 
     private final KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> cdcKafkaListenerContainerFactory;
 
-    private final CdcConsumer cdcConsumer;
+    private final KafkaConsumer kafkaConsumer;
 
 
     @Override
     public void install(ConnectorConfig connectorConfig) {
         setupSourceConnectors(connectorConfig);
-        setupSinkConnectors(connectorConfig);
     }
 
 
@@ -60,62 +59,14 @@ public class KafkaEngineInstaller implements EngineInstaller {
 
 
     private void setupSourceConnectors(ConnectorConfig connectorConfig) {
-        if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
-            log.info("No source connectors to setup");
-            return;
-        }
-
         connectorConfig
             .getSourceConnectors()
             .forEach(
                 connector -> {
-                    installConnector(connectorConfig.getUrl(), connector.request());
+                    ConnectorsBootstrapper.installConnector(connectorConfig.getUrl(), connector.request());
                     setupCdcTopicConsumers(connector, connectorConfig.getProcessorConfig());
                 }
             );
-    }
-
-
-    private void setupSinkConnectors(ConnectorConfig connectorConfig) {
-        if (connectorConfig.getSinkConnectors() == null || connectorConfig.getSinkConnectors().isEmpty()) {
-            log.info("No sink connectors to setup");
-            return;
-        }
-
-        connectorConfig
-            .getSinkConnectors()
-            .forEach(
-                connector -> {
-                    installConnector(connectorConfig.getUrl(), connector.request());
-                }
-            );
-    }
-
-
-    private void installConnector(String baseUrl, ConnectorRequest request) {
-        try {
-            log.info("Setting up datasource connector with name {}", request.getName());
-            var requestEntity = new HttpEntity<>(request);
-
-            var restTemplateBuilder = new RestTemplateBuilder();
-            var template = restTemplateBuilder.build();
-            var response = template.exchange(
-                baseUrl + "/connectors/", HttpMethod.POST, requestEntity, String.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Successfully installed connector with name {}", request.getName());
-            } else {
-                log.error("Failed to setup datasource connector with name {}", request.getName());
-                throw new RuntimeException("Failed to setup datasource connector with name " + request.getName());
-            }
-        } catch (HttpClientErrorException t) {
-            if (t.getStatusCode() == HttpStatus.CONFLICT) {
-                log.info("Connector with name {} already exists", request.getName());
-            } else {
-                throw t;
-            }
-        }
     }
 
 
@@ -138,7 +89,7 @@ public class KafkaEngineInstaller implements EngineInstaller {
         }
 
         cdcTopicFactory.createTopics(topics);
-        createConsumer(cdcConsumer, processorConfig, topics);
+        createConsumer(kafkaConsumer, processorConfig, topics);
     }
 
 

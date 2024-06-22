@@ -57,22 +57,29 @@ public abstract class RecordProcessor<T> {
     }
 
 
-    public Pair<Integer, Integer> process(List<ConsumerRecord<String, String>> records) throws ExecutionException, InterruptedException {
-        if (config.isConcurrency()) {
-            return processConcurrent(records);
+    public Pair<Integer, Integer> process(List<MessageRecord<T>> records) {
+        try {
+            if (config.isSingleConcurrent()) {
+                return processAsync(records);
+            }
+
+            if (config.isConcurrency()) {
+                return processConcurrent(records);
+            } else {
+                return processSequential(records);
+            }
         }
-        else {
-            return processSequential(records);
+        catch (Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 
 
-    private Pair<Integer, Integer> processSequential(List<ConsumerRecord<String, String>> records) throws ExecutionException, InterruptedException {
-        List<MessageRecord<T>> mappedList = composeRecordsForProcessing(records);
+    private Pair<Integer, Integer> processSequential(List<MessageRecord<T>> records) {
         List<MessageRecord<T>> successList = new ArrayList<>();
         List<MessageRecord<T>> failedList = new ArrayList<>();
 
-        for (MessageRecord<T> messageRecord : mappedList) {
+        for (MessageRecord<T> messageRecord : records) {
             doProcessing(messageRecord, successList, failedList);
         }
 
@@ -81,13 +88,12 @@ public abstract class RecordProcessor<T> {
 
 
 
-    private Pair<Integer, Integer> processConcurrent(List<ConsumerRecord<String, String>> records) throws ExecutionException, InterruptedException {
-        List<MessageRecord<T>> mappedList = composeRecordsForProcessing(records);
+    private Pair<Integer, Integer> processConcurrent(List<MessageRecord<T>> records) throws ExecutionException, InterruptedException {
         List<MessageRecord<T>> successList = new ArrayList<>();
         List<MessageRecord<T>> failedList = new ArrayList<>();
         List<Future<?>> submitted = new ArrayList<>();
 
-        for (MessageRecord<T> messageRecord : mappedList) {
+        for (MessageRecord<T> messageRecord : records) {
             submitted.add(executor.submit(() -> doProcessing(messageRecord, successList, failedList)));
         }
 
@@ -99,39 +105,15 @@ public abstract class RecordProcessor<T> {
     }
 
 
+    private Pair<Integer, Integer> processAsync(List<MessageRecord<T>> records) {
+        List<MessageRecord<T>> successList = new ArrayList<>();
+        List<MessageRecord<T>> failedList = new ArrayList<>();
 
-    protected List<MessageRecord<T>> composeRecordsForProcessing(List<ConsumerRecord<String, String>> records) {
-        return records.stream().map(this::mapRecord).toList();
-    }
-
-
-    private MessageRecord<T> mapRecord(ConsumerRecord<String, String> consumerRecord) {
-        try {
-            T object = jsonMapper.readValue(consumerRecord.value(), typeClass);
-            log.debug("Mapped Object from Consumer Record: {}", object);
-
-            var processingCount = StreamSupport.stream(
-                    consumerRecord.headers()
-                        .headers(MESSAGE_HEADER_PROCESSING_COUNT)
-                        .spliterator(), false
-                )
-                .toList();
-            var processingStatus = StreamSupport.stream(
-                    consumerRecord.headers()
-                        .headers(MESSAGE_HEADER_PROCESSING_STATUS)
-                        .spliterator(), false
-                )
-                .toList();
-
-            return new MessageRecord<>(
-                processingCount.isEmpty() ? 0 : Integer.parseInt(new String(processingCount.get(0).value())),
-                processingStatus.isEmpty() ? "" : new String(processingStatus.get(0).value()),
-                object
-            );
+        for (MessageRecord<T> messageRecord : records) {
+            executor.submit(() -> doProcessing(messageRecord, successList, failedList));
         }
-        catch (JsonProcessingException e) {
-            throw new IllegalArgumentException(e);
-        }
+
+        return Pair.of(-1, -1);
     }
 
 
@@ -144,8 +126,8 @@ public abstract class RecordProcessor<T> {
         } catch (Exception t) {
             log.error(t.getMessage(), t);
 
-            eventHandler.handleFailure(messageRecord);
-            failedList.add(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
+            eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
+            failedList.add(messageRecord);
         }
     }
 

@@ -1,7 +1,6 @@
 package com.julianduru.cdc;
 
 import com.julianduru.cdc.config.ConnectorConfig;
-import com.julianduru.cdc.data.OperationStatus;
 import com.julianduru.cdc.data.Payload;
 import com.julianduru.cdc.processing.KafkaEventHandler;
 import com.julianduru.cdc.processing.KafkaRecordProcessor;
@@ -13,12 +12,12 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class CdcProcessor extends KafkaRecordProcessor<Payload> {
+public class KafkaEngineProcessor extends KafkaRecordProcessor<Payload> {
 
     private final CdcProcessorDelegateContainer cdcProcessorDelegateContainer;
 
 
-    protected CdcProcessor(
+    protected KafkaEngineProcessor(
         ConnectorConfig connectorConfig,
         KafkaEventHandler<Payload> kafkaEventHandler,
         CdcProcessorDelegateContainer cdcProcessorDelegateContainer
@@ -28,14 +27,9 @@ public class CdcProcessor extends KafkaRecordProcessor<Payload> {
     }
 
 
+    @Override
     public void process(Payload payload) {
-        var reference = payload.hash();
-        var response = cdcProcessorDelegateContainer.query(reference, payload);
-        log.debug("Querying Message Reference: {}. Response: {}", reference, response);
-
-        if (response.getStatus().isTryable()) {
-            cdcProcessorDelegateContainer.process(reference, payload);
-        }
+        cdcProcessorDelegateContainer.doHandle(payload);
     }
 
 

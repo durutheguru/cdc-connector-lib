@@ -40,6 +40,10 @@ public class ProcessorConfig {
 
     }
 
+    public boolean isSingleConcurrent() {
+        return !isBatch() && isConcurrency();
+    }
+
 
     public ProcessorConfig valid() throws IllegalStateException {
         if (isConcurrency()) {

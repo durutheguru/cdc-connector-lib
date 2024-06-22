@@ -28,19 +28,31 @@ public class CdcProcessorDelegateContainer {
     }
 
 
-    public OperationStatus query(String reference, Payload payload) {
+
+    public void doHandle(Payload payload) {
+        var reference = payload.hash();
+        var response = query(reference, payload);
+        log.debug("Querying Message Reference: {}. Response: {}", reference, response);
+
+        if (response.getStatus().isTryable()) {
+            process(reference, payload);
+        }
+    }
+
+
+    private OperationStatus query(String reference, Payload payload) {
         CdcProcessorDelegate delegate = getDelegateForPayload(payload).get();
         return delegate.query(reference, payload);
     }
 
 
-    public void process(String reference, Payload payload) {
+    private void process(String reference, Payload payload) {
         CdcProcessorDelegate delegate = getDelegateForPayload(payload).get();
         delegate.process(reference, payload);
     }
 
 
-    public boolean supports(Payload payload) {
+    private boolean supports(Payload payload) {
         return getDelegateForPayload(payload, false).isPresent();
     }
 
