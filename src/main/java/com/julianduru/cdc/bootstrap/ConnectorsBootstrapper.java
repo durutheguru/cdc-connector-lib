@@ -16,7 +16,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
@@ -25,12 +24,10 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * created by Julian Duru on 29/04/2023
@@ -74,21 +71,20 @@ public class ConnectorsBootstrapper {
     }
 
 
-    private void setupSourceConnectors() throws Exception {
+    private void setupSourceConnectors() {
         if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
             log.info("No source connectors to setup");
             return;
         }
 
-        List<SourceConnectorRequest> requests = connectorConfig.getSourceConnectors()
-            .stream()
-            .map(SourceConnectorRequest::new)
-            .collect(Collectors.toList());
-
-        for (SourceConnectorRequest request : requests) {
-            installConnector(request);
-            setupCdcTopicConsumers(request);
-        }
+        connectorConfig
+            .getSourceConnectors()
+            .forEach(
+                connector -> {
+                    installConnector(connector.request());
+                    setupCdcTopicConsumers(connector);
+                }
+            );
     }
 
 
@@ -98,59 +94,59 @@ public class ConnectorsBootstrapper {
             return;
         }
 
-        List<SinkConnectorRequest> requests = connectorConfig.getSinkConnectors()
-            .stream()
-            .map(SinkConnectorRequest::new)
-            .toList();
-
-        for (SinkConnectorRequest request : requests) {
-            installConnector(request);
-        }
+        connectorConfig
+            .getSinkConnectors()
+            .forEach(
+                connector -> {
+                    installConnector(connector.request());
+                }
+            );
     }
 
 
-    private void installConnector(ConnectorRequest request) throws Exception {
+    private void installConnector(ConnectorRequest request) throws RuntimeException {
         try {
             log.info("Setting up datasource connector with name {}", request.getName());
-            HttpEntity<ConnectorRequest> requestEntity = new HttpEntity<>(request);
+            var requestEntity = new HttpEntity<>(request);
 
-            RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
-            RestTemplate template = restTemplateBuilder.build();
-            ResponseEntity<String> response = template.exchange(
+            var restTemplateBuilder = new RestTemplateBuilder();
+            var template = restTemplateBuilder.build();
+            var response = template.exchange(
                 connectorConfig.getUrl() + "/connectors/", HttpMethod.POST, requestEntity, String.class
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Successfully installed connector with name {}", request.getName());
-            }
-            else {
+            } else {
                 log.error("Failed to setup datasource connector with name {}", request.getName());
-                throw new Exception("Failed to setup datasource connector with name " + request.getName());
+                throw new RuntimeException("Failed to setup datasource connector with name " + request.getName());
             }
-        }
-        catch (HttpClientErrorException t) {
+        } catch (HttpClientErrorException t) {
             if (t.getStatusCode() == HttpStatus.CONFLICT) {
                 log.info("Connector with name {} already exists", request.getName());
-            }
-            else {
+            } else {
                 throw t;
             }
         }
     }
 
 
-    private void setupCdcTopicConsumers(SourceConnectorRequest request) throws Exception {
-        if (request.getSourceConnector().isDisableDefaultConsumer()) {
-            log.info("Consumer Disabled for connector with name {}", request.getName());
+    private void setupCdcTopicConsumers(SourceConnector connector) {
+        if (connector.isDisableDefaultConsumer()) {
+            log.info("Consumer Disabled for connector with name {}", connector.getName());
             return;
         }
 
-        SourceConnector sourceConnector = request.getSourceConnector();
-        List<String> tableIncludeList = sourceConnector.getTableIncludeList();
+        var tableIncludeList = Arrays.stream(
+            connector
+                .getConfig()
+                .get("table.include.list")
+                .split("\\s*,\\s*")
+        ).toList();
 
         String[] topics = new String[tableIncludeList.size()];
         for (int i = 0; i < topics.length; i++) {
-            topics[i] = request.getName() + "." + tableIncludeList.get(i);
+            topics[i] = connector.getName() + "." + tableIncludeList.get(i);
         }
 
         cdcTopicFactory.createTopics(topics);
@@ -162,23 +158,27 @@ public class ConnectorsBootstrapper {
     }
 
 
-    private void createConsumer(Consumer consumer, String... topics) throws Exception {
-        log.debug("Creating consumer for topic: {}", String.join(", ", topics));
+    private void createConsumer(Consumer consumer, String... topics) {
+        try {
+            log.debug("Creating consumer for topic: {}", String.join(", ", topics));
 
-        MethodKafkaListenerEndpoint<String, String> endpoint = new MethodKafkaListenerEndpoint<>();
+            MethodKafkaListenerEndpoint<String, String> endpoint = new MethodKafkaListenerEndpoint<>();
 
-        endpoint.setId(UUID.randomUUID().toString());
-        endpoint.setGroupId(groupId);
-        endpoint.setBean(consumer);
-        endpoint.setTopics(topics);
-        endpoint.setMessageHandlerMethodFactory(new DefaultMessageHandlerMethodFactory());
-        endpoint.setMethod(consumer.getClass().getMethod("consume", ConsumerRecord.class));
+            endpoint.setId(UUID.randomUUID().toString());
+            endpoint.setGroupId(groupId);
+            endpoint.setBean(consumer);
+            endpoint.setTopics(topics);
+            endpoint.setMessageHandlerMethodFactory(new DefaultMessageHandlerMethodFactory());
+            endpoint.setMethod(consumer.getClass().getMethod("consume", ConsumerRecord.class));
 
-        Properties consumerProperties = new Properties();
-        consumerProperties.putAll(kafkaProperties.buildConsumerProperties());
-        endpoint.setConsumerProperties(consumerProperties);
+            Properties consumerProperties = new Properties();
+            consumerProperties.putAll(kafkaProperties.buildConsumerProperties(null));
+            endpoint.setConsumerProperties(consumerProperties);
 
-        registry.registerListenerContainer(endpoint, cdcKafkaListenerContainerFactory, true);
+            registry.registerListenerContainer(endpoint, cdcKafkaListenerContainerFactory, true);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
 

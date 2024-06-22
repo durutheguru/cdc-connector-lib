@@ -61,9 +61,14 @@ public class CdcTopicFactory {
     }
 
 
-    public void createTopics(String...topics) throws ExecutionException, InterruptedException {
-        for (String topic : topics) {
-            createTopic(topic);
+    public void createTopics(String...topics) {
+        try {
+            for (String topic : topics) {
+                createTopic(topic);
+            }
+        }
+        catch (Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 

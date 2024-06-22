@@ -18,11 +18,11 @@ public class ConnectorConfig {
 
     private String url;
 
-
     private List<SourceConnector> sourceConnectors;
 
-
     private List<SinkConnector> sinkConnectors;
+
+    private Processing processing;
 
 
     public Optional<SourceConnector> getConnectorForTopic(String topic) {
