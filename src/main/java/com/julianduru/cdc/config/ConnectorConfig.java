@@ -22,7 +22,7 @@ public class ConnectorConfig {
 
     private List<SinkConnector> sinkConnectors;
 
-    private Processing processing;
+    private ProcessorConfig processorConfig;
 
 
     public Optional<SourceConnector> getConnectorForTopic(String topic) {

@@ -30,7 +30,7 @@ public interface CdcProcessorDelegate {
     OperationStatus query(String reference, Payload payload);
 
 
-    OperationStatus process(String reference, Payload payload);
+    void process(String reference, Payload payload);
 
 
 

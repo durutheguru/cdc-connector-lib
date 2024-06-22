@@ -6,12 +6,9 @@ import com.julianduru.cdc.config.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -21,53 +18,48 @@ import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.UUID;
 
+/**
+ *
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ConnectorsBootstrapper {
+public class KafkaEngineInstaller implements EngineInstaller {
 
     @Value("${queue.config.consumers.default-group-id}")
     private String groupId;
 
-    private final ConnectorConfig connectorConfig;
+    private final CdcTopicFactory cdcTopicFactory;
 
     private final KafkaProperties kafkaProperties;
 
     private final KafkaListenerEndpointRegistry registry;
 
-    private final CdcDlqPrefixHandler dlqPrefixHandler;
+    private final KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> cdcKafkaListenerContainerFactory;
 
     private final CdcConsumer cdcConsumer;
 
-    private final CdcDlqConsumer cdcDlqConsumer;
 
-    private final CdcTopicFactory cdcTopicFactory;
-
-
-    @Autowired(required = false)
-    private KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> cdcKafkaListenerContainerFactory;
-
-
-    @EventListener(ApplicationStartedEvent.class)
-    public void setupConnectors() throws Exception {
-        if (!StringUtils.hasText(connectorConfig.getUrl())) {
-            log.info("No connector url provided, skipping connector setup");
-            return;
-        }
-
-        setupSourceConnectors();
-        setupSinkConnectors();
+    @Override
+    public void install(ConnectorConfig connectorConfig) {
+        setupSourceConnectors(connectorConfig);
+        setupSinkConnectors(connectorConfig);
     }
 
 
-    private void setupSourceConnectors() {
+    @Override
+    public ProcessorConfig.Engine engine() {
+        return ProcessorConfig.Engine.KAFKA;
+    }
+
+
+    private void setupSourceConnectors(ConnectorConfig connectorConfig) {
         if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
             log.info("No source connectors to setup");
             return;
@@ -77,14 +69,14 @@ public class ConnectorsBootstrapper {
             .getSourceConnectors()
             .forEach(
                 connector -> {
-                    installConnector(connector.request());
-                    setupCdcTopicConsumers(connector);
+                    installConnector(connectorConfig.getUrl(), connector.request());
+                    setupCdcTopicConsumers(connector, connectorConfig.getProcessorConfig());
                 }
             );
     }
 
 
-    private void setupSinkConnectors() throws Exception {
+    private void setupSinkConnectors(ConnectorConfig connectorConfig) {
         if (connectorConfig.getSinkConnectors() == null || connectorConfig.getSinkConnectors().isEmpty()) {
             log.info("No sink connectors to setup");
             return;
@@ -94,13 +86,13 @@ public class ConnectorsBootstrapper {
             .getSinkConnectors()
             .forEach(
                 connector -> {
-                    installConnector(connector.request());
+                    installConnector(connectorConfig.getUrl(), connector.request());
                 }
             );
     }
 
 
-    private void installConnector(ConnectorRequest request) {
+    private void installConnector(String baseUrl, ConnectorRequest request) {
         try {
             log.info("Setting up datasource connector with name {}", request.getName());
             var requestEntity = new HttpEntity<>(request);
@@ -108,7 +100,7 @@ public class ConnectorsBootstrapper {
             var restTemplateBuilder = new RestTemplateBuilder();
             var template = restTemplateBuilder.build();
             var response = template.exchange(
-                connectorConfig.getUrl() + "/connectors/", HttpMethod.POST, requestEntity, String.class
+                baseUrl + "/connectors/", HttpMethod.POST, requestEntity, String.class
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
@@ -127,7 +119,7 @@ public class ConnectorsBootstrapper {
     }
 
 
-    private void setupCdcTopicConsumers(SourceConnector connector) {
+    private void setupCdcTopicConsumers(SourceConnector connector, ProcessorConfig processorConfig) {
         if (connector.isDisableDefaultConsumer()) {
             log.info("Consumer Disabled for connector with name {}", connector.getName());
             return;
@@ -146,15 +138,11 @@ public class ConnectorsBootstrapper {
         }
 
         cdcTopicFactory.createTopics(topics);
-        createConsumer(cdcConsumer, topics);
-
-        String[] dlqTopics = dlqPrefixHandler.addDLQPrefix(topics);
-        cdcTopicFactory.createTopics(dlqTopics);
-        createConsumer(cdcDlqConsumer, dlqTopics);
+        createConsumer(cdcConsumer, processorConfig, topics);
     }
 
 
-    private void createConsumer(Consumer consumer, String... topics) {
+    private void createConsumer(Consumer consumer, ProcessorConfig processorConfig, String... topics) {
         try {
             log.info("Creating consumer for topic: {}", String.join(", ", topics));
 
@@ -166,6 +154,7 @@ public class ConnectorsBootstrapper {
             endpoint.setTopics(topics);
             endpoint.setMessageHandlerMethodFactory(new DefaultMessageHandlerMethodFactory());
             endpoint.setMethod(consumer.getClass().getMethod("consume", ConsumerRecord.class));
+            endpoint.setBatchListener(processorConfig.isBatch());
 
             Properties consumerProperties = new Properties();
             consumerProperties.putAll(kafkaProperties.buildConsumerProperties(null));
@@ -179,5 +168,4 @@ public class ConnectorsBootstrapper {
 
 
 }
-
 

@@ -118,7 +118,7 @@ public class OperationStatus {
         }
 
 
-        public boolean isRetryable() {
+        public boolean isTryable() {
             return this == PENDING || this == FAILED;
         }
 

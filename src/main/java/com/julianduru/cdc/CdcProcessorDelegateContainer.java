@@ -34,9 +34,9 @@ public class CdcProcessorDelegateContainer {
     }
 
 
-    public OperationStatus process(String reference, Payload payload) {
+    public void process(String reference, Payload payload) {
         CdcProcessorDelegate delegate = getDelegateForPayload(payload).get();
-        return delegate.process(reference, payload);
+        delegate.process(reference, payload);
     }
 
 
