@@ -49,7 +49,7 @@ public abstract class RecordProcessor<T extends Hashable> {
 
 
     private void processConfig() {
-        if (config.isConcurrency()) {
+        if (config.isConcurrent()) {
             executor = Executors.newFixedThreadPool(config.getThreadPoolSize());
         }
     }
@@ -61,11 +61,11 @@ public abstract class RecordProcessor<T extends Hashable> {
                 processAsync(records);
                 return Pair.of(records.size(), 0);
             }
-
-            if (config.isConcurrency()) {
+            else if (config.isConcurrent()) {
                 return processConcurrent(records);
-            } else {
-                return processSequential(records);
+            }
+            else {
+                return processSerial(records);
             }
         }
         catch (Throwable t) {
@@ -74,7 +74,7 @@ public abstract class RecordProcessor<T extends Hashable> {
     }
 
 
-    private Pair<Integer, Integer> processSequential(List<MessageRecord<T>> records) {
+    private Pair<Integer, Integer> processSerial(List<MessageRecord<T>> records) {
         List<MessageRecord<T>> successList = new ArrayList<>();
         List<MessageRecord<T>> failedList = new ArrayList<>();
 
@@ -116,7 +116,7 @@ public abstract class RecordProcessor<T extends Hashable> {
                 .hashable(messageRecord)
                 .messageRecord(messageRecord)
                 .consumer(
-                    (record) -> {
+                    record -> {
                         try {
                             process(record.object());
                             eventHandler.handleSuccess(messageRecord);

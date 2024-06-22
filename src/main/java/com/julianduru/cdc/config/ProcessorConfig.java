@@ -11,7 +11,7 @@ public class ProcessorConfig {
 
     private boolean batch;
 
-    private boolean concurrency;
+    private boolean concurrent;
 
     private Integer threadPoolSize;
 
@@ -41,12 +41,12 @@ public class ProcessorConfig {
     }
 
     public boolean isSingleConcurrent() {
-        return !isBatch() && isConcurrency();
+        return !isBatch() && isConcurrent();
     }
 
 
     public ProcessorConfig valid() throws IllegalStateException {
-        if (isConcurrency()) {
+        if (isConcurrent()) {
             if (getThreadPoolSize() == null) {
                 throw new IllegalStateException("Thread Pool Size must be set when concurrency is enabled");
             }
