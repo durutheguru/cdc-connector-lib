@@ -28,7 +28,7 @@ public class ProcessorConfig {
     private String dlTopic;
 
 
-    enum Sync {
+    public enum Sync {
 
         REDIS, RAFT,
 

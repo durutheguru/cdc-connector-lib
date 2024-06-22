@@ -2,18 +2,17 @@ package com.julianduru.cdc.processing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 /**
  *
  */
 @Slf4j
-public record MessageRecord<T>(int attempts, String status, T object) {
+public record MessageRecord<T>(int attempts, String status, T object) implements Hashable {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -52,4 +51,12 @@ public record MessageRecord<T>(int attempts, String status, T object) {
     }
 
 
+    @Override
+    public String hash() {
+        //TODO: replace UUID
+        return (object instanceof Hashable hashable) ? hashable.hash() : UUID.randomUUID().toString();
+    }
+
+
 }
+

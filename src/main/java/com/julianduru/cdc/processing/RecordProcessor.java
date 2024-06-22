@@ -1,10 +1,7 @@
 package com.julianduru.cdc.processing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.julianduru.cdc.config.ProcessorConfig;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,17 +11,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.StreamSupport;
 
 /**
  *
  */
-public abstract class RecordProcessor<T> {
+public abstract class RecordProcessor<T extends Hashable> {
 
     protected static final String MESSAGE_HEADER_PROCESSING_COUNT = "processing-count";
     protected static final String MESSAGE_HEADER_PROCESSING_STATUS = "processing-status";
-
-    protected ObjectMapper jsonMapper = new ObjectMapper();
 
     protected Logger log = LoggerFactory.getILoggerFactory().getLogger(this.getClass().getName());
 
@@ -36,15 +30,19 @@ public abstract class RecordProcessor<T> {
 
     private final EventHandler<T> eventHandler;
 
+    private final LockingMechanism<T> lockingMechanism;
+
 
     protected RecordProcessor(
         Class<T> typeClass,
         ProcessorConfig config,
-        EventHandler<T> eventHandler
+        EventHandler<T> eventHandler,
+        LockingMechanism<T> lockingMechanism
     ) {
         this.config = config.valid();
         this.typeClass = typeClass;
         this.eventHandler = eventHandler;
+        this.lockingMechanism = lockingMechanism;
 
         processConfig();
     }
@@ -88,7 +86,6 @@ public abstract class RecordProcessor<T> {
     }
 
 
-
     private Pair<Integer, Integer> processConcurrent(List<MessageRecord<T>> records) throws ExecutionException, InterruptedException {
         List<MessageRecord<T>> successList = new ArrayList<>();
         List<MessageRecord<T>> failedList = new ArrayList<>();
@@ -114,21 +111,29 @@ public abstract class RecordProcessor<T> {
 
 
     private void doProcessing(MessageRecord<T> messageRecord, List<MessageRecord<T>> successList, List<MessageRecord<T>> failedList) {
-        try {
-            process(messageRecord.object());
-
-            eventHandler.handleSuccess(messageRecord);
-            if (successList != null) {
-                successList.add(messageRecord);
-            }
-        } catch (Exception t) {
-            log.error(t.getMessage(), t);
-
-            eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
-            if (failedList != null) {
-                failedList.add(messageRecord);
-            }
-        }
+        lockingMechanism.lock(
+            LockObject.<T>builder()
+                .hashable(messageRecord)
+                .messageRecord(messageRecord)
+                .consumer(
+                    (record) -> {
+                        try {
+                            process(record.object());
+                            eventHandler.handleSuccess(messageRecord);
+                            if (successList != null) {
+                                successList.add(messageRecord);
+                            }
+                        } catch (Exception t) {
+                            log.error(t.getMessage(), t);
+                            eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
+                            if (failedList != null) {
+                                failedList.add(messageRecord);
+                            }
+                        }
+                    }
+                )
+                .build()
+        );
     }
 
 

@@ -14,7 +14,7 @@ import java.util.List;
  *
  */
 
-public abstract class KafkaRecordProcessor<T> extends RecordProcessor<T> {
+public abstract class KafkaRecordProcessor<T extends Hashable> extends RecordProcessor<T> {
 
 
 
@@ -23,7 +23,7 @@ public abstract class KafkaRecordProcessor<T> extends RecordProcessor<T> {
         ProcessorConfig processorConfig,
         KafkaEventHandler<T> kafkaEventHandler
     ) {
-        super(typeClass, processorConfig, kafkaEventHandler);
+        super(typeClass, processorConfig, kafkaEventHandler, new NoOpLockingMechanism<>());
     }
 
 
