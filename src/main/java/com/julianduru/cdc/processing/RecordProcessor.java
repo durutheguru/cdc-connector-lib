@@ -114,7 +114,7 @@ public abstract class RecordProcessor<T extends Hashable> {
         lockingMechanism.lock(
             LockObject.<T>builder()
                 .hashable(messageRecord)
-                .messageRecord(messageRecord)
+                .record(messageRecord)
                 .consumer(
                     record -> {
                         try {
@@ -125,7 +125,7 @@ public abstract class RecordProcessor<T extends Hashable> {
                             }
                         } catch (Exception t) {
                             log.error(t.getMessage(), t);
-                            eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.object()));
+                            eventHandler.handleFailure(new MessageRecord<>(messageRecord.attempts() + 1, t.getMessage(), messageRecord.topic(), messageRecord.object()));
                             if (failedList != null) {
                                 failedList.add(messageRecord);
                             }

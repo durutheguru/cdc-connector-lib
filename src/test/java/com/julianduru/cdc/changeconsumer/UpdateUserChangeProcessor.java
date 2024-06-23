@@ -26,14 +26,14 @@ public class UpdateUserChangeProcessor {
     private final DataCaptureMap dataCaptureMap;
 
 
-    public OperationStatus process(String reference, Payload payload) {
+    public OperationStatus process(Payload payload) {
         log.info("Payload: {}", JSON.stringify(payload, ""));
 
         if (failureCount.getAndIncrement() < 3) {
             return OperationStatus.failure();
         }
         else {
-            dataCaptureMap.put(reference, payload);
+            dataCaptureMap.put(payload.hash(), payload);
             failureCount.set(0);
             return OperationStatus.success();
         }

@@ -12,7 +12,7 @@ import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +22,7 @@ import java.util.Properties;
  *
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class EmbeddedEngineInstaller implements EngineInstaller {
 
@@ -37,6 +38,11 @@ public class EmbeddedEngineInstaller implements EngineInstaller {
 
 
     private void setupSourceConnectors(ConnectorConfig connectorConfig) {
+        if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
+            log.info("No source connectors to setup");
+            return;
+        }
+
         connectorConfig
             .getSourceConnectors()
             .forEach(
@@ -67,7 +73,7 @@ public class EmbeddedEngineInstaller implements EngineInstaller {
                     processor.process(
                         List.of(
                             new MessageRecord<>(
-                                0, "", jsonMapper.readValue(event.value(), Payload.class)
+                                0, "", null, jsonMapper.readValue(event.value(), Payload.class)
                             )
                         )
                     );

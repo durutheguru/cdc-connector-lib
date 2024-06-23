@@ -2,29 +2,76 @@
 
 code.config.connector:
   url: http://localhost:8083
+
   source-connectors:
     - name: cdc_connector
-      connectorType: MYSQL_SOURCE
-      databaseHost: mysqldb
-      databasePort: 3306
-      databaseUsername: root
-      databasePassword: 1234567890
-      databaseIncludeList:
-        - employee
-      tableIncludeList:
-        - employee.user
-      kafkaBootstrapServers:
-        - kafka:9092
-  sink-connectors:
-    - name: sink_connector
-      connectorType: JDBC_SINK
-      topics: cdc_connector.employee.user
-      url: "jdbc:postgresql://postgres:5432/employee_database_sink"
-      username: postgres
-      password: password
+      config:
+        connector.class: io.debezium.connector.mysql.MySqlConnector
+        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+        offset.storage.file.filename: /tmp/offsets.dat
+        tasks.max: 1
+        database.hostname: localhost
+        database.port: 33080
+        database.user: root
+        database.password: 1234567890
+        database.allowPublicKeyRetrieval: true
+        database.server.id: 5
+        database.server.name: ${code.config.connector.source-connectors[0].name}
+        database.connectionTimeZone: 'UTC'
+        topic.prefix: ${code.config.connector.source-connectors[0].name}
+        database.include.list: employee
+        table.include.list: employee.user
+        numeric.mapping: best_fit
+        value.converter: org.apache.kafka.connect.json.JsonConverter
+        value.converter.schemas.enable: false
+        include.schema.changes: true
+        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+        schema.history.internal.file.filename: /tmp/schema_history.dat
+      disable-default-consumer: false
 
+#    - name: cdc_connector
+#      config:
+#        connector.class: io.debezium.connector.mysql.MySqlConnector
+#        tasks.max: 1
+#        database.hostname: mysqldb
+#        database.port: 3306
+#        database.user: root
+#        database.password: 1234567890
+#        database.allowPublicKeyRetrieval: true
+#        database.server.id: 1
+#        database.server.name: ${code.config.connector.source-connectors[0].name}
+#        database.connectionTimeZone: 'UTC'
+#        topic.prefix: ${code.config.connector.source-connectors[0].name}
+#        database.include.list: employee
+#        table.include.list: employee.user
+#        database.history.kafka.bootstrap.servers: kafka:9092
+#        database.history.kafka.topic: "schema-changes.${code.config.connector.source-connectors[0].name}"
+#        numeric.mapping: best_fit
+#        value.converter: org.apache.kafka.connect.json.JsonConverter
+#        value.converter.schemas.enable: false
+#        include.schema.changes: true
+#        schema.history.internal.kafka.bootstrap.servers: kafka:9092
+#        schema.history.internal.kafka.topic: "schema-changes.${code.config.connector.source-connectors[0].name}"
+#      disable-default-consumer: false
 
+#  sink-connectors:
+#    - name: sink_connector
+#      config:
+#        connectorType: JDBC_SINK
+#        topics: cdc_connector.employee.user
+#        url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+#        username: postgres
+#        password: password
 
+  processor-config:
+    batch: false
+    concurrent: true
+    threadPoolSize: 10
+    engine: EMBED
+    sync: REDIS
+    max-retries: 3
+    retry-topic-suffix: -retry
+    dl-topic-suffix: -dlt
 
 
 logging:
@@ -44,25 +91,16 @@ queue:
       partitions: 5
       replication: 1
 
-#    kafka:
-#      security:
-#        protocol: "SASL_SSL"
-#      sasl:
-#        mechanism: "PLAIN"
-#        jaas:
-#          config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='6JM6UQM7HGF6OGL2' password='QJ+lnJ4f63PqaZWl9jqeE4raaPZGd7jKsGxQxL7p72KT5xY3iJpFHJPhd+Lb+Y91';"
-
-
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysqldb:33080/employee?createDatabaseIfNotExist=true&serverTimezone=UTC%2B1}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:33080/employee?createDatabaseIfNotExist=true&serverTimezone=UTC%2B1}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234567890}
     driver-class-name: com.mysql.cj.jdbc.Driver
     initialization-mode: always
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:9093
     consumer:
       auto-offset-reset: earliest
     producer:
@@ -77,7 +115,12 @@ spring:
       hibernate.format_sql: true
       hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
 
+  data.redis:
+    host: localhost
+    port: 6379
+    password: password
 
   sql:
     init:
       mode: always
+

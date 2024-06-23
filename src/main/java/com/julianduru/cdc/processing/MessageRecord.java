@@ -12,13 +12,14 @@ import java.util.stream.StreamSupport;
  *
  */
 @Slf4j
-public record MessageRecord<T>(int attempts, String status, T object) implements Hashable {
+public record MessageRecord<T>(int attempts, String status, String topic, T object) implements Hashable {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    public MessageRecord(int attempts, String status, T object) {
+    public MessageRecord(int attempts, String status, String topic, T object) {
         this.attempts = attempts;
         this.status = status;
+        this.topic = topic;
         this.object = object;
     }
 
@@ -43,6 +44,7 @@ public record MessageRecord<T>(int attempts, String status, T object) implements
             return new MessageRecord<T>(
                 processingCount.isEmpty() ? 0 : Integer.parseInt(new String(processingCount.getFirst().value())),
                 processingStatus.isEmpty() ? "" : new String(processingStatus.getFirst().value()),
+                consumerRecord.topic(),
                 object
             );
         } catch (JsonProcessingException e) {

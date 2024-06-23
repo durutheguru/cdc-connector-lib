@@ -1,5 +1,6 @@
 package com.julianduru.cdc.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -7,6 +8,7 @@ import lombok.Data;
  * created by Julian Duru on 25/04/2023
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Source {
 
 

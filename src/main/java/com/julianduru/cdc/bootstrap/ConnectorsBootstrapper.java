@@ -33,17 +33,12 @@ public class ConnectorsBootstrapper {
             return;
         }
 
-        setupSourceConnectors();
+        installCdcEngine();
         setupSinkConnectors();
     }
 
 
-    private void setupSourceConnectors() {
-        if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
-            log.info("No source connectors to setup");
-            return;
-        }
-
+    private void installCdcEngine() {
         var engine = connectorConfig.getProcessorConfig().getEngine();
         for (var installer : engineInstallers) {
             if (installer.engine() == engine) {

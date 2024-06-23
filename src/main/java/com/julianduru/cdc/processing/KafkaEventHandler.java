@@ -25,9 +25,9 @@ public class KafkaEventHandler<T> implements EventHandler<T>{
 
     private Integer maxRetries;
 
-    private String retryTopic;
+    private String retryTopicSuffix;
 
-    private String dlTopic;
+    private String dlTopicSuffix;
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 
@@ -39,8 +39,8 @@ public class KafkaEventHandler<T> implements EventHandler<T>{
         var processorConfig = connectorConfig.getProcessorConfig();
 
         maxRetries = processorConfig.getMaxRetries();
-        retryTopic = processorConfig.getRetryTopic();
-        dlTopic = processorConfig.getDlTopic();
+        retryTopicSuffix = processorConfig.getRetryTopicSuffix();
+        dlTopicSuffix = processorConfig.getDlTopicSuffix();
     }
 
 
@@ -72,7 +72,8 @@ public class KafkaEventHandler<T> implements EventHandler<T>{
 
     private ProducerRecord<String, String> composeFailedProducerRecord(MessageRecord<T> messageRecord) {
         try {
-            var destinationTopic = "%s".formatted(messageRecord.attempts() < maxRetries ? retryTopic : dlTopic);
+            //TODO: handle retry topic, use as prefix to concat with message topic.
+            var destinationTopic = "%s%s".formatted(messageRecord.topic(), messageRecord.attempts() < maxRetries ? retryTopicSuffix : dlTopicSuffix);
             return new ProducerRecord<>(
                 destinationTopic, null, (String) null, jsonMapper.writeValueAsString(messageRecord.object()),
                 () -> List.of(

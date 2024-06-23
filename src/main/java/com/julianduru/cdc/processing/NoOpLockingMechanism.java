@@ -9,7 +9,7 @@ public class NoOpLockingMechanism<T> implements LockingMechanism<T> {
     public void lock(LockObject<T> object) {
         object
             .getConsumer()
-            .accept(object.getMessageRecord());
+            .accept(object.getRecord());
     }
 
 

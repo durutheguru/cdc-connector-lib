@@ -6,6 +6,7 @@ import com.julianduru.cdc.config.ProcessorConfig;
 import com.julianduru.cdc.data.Payload;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,13 +23,15 @@ public class EmbeddedRecordProcessor extends RecordProcessor<Payload> {
         ConnectorConfig connectorConfig,
         EmbeddedEventHandler<Payload> eventHandler,
         CdcProcessorDelegateContainer cdcProcessorDelegateContainer,
-        RedissonClient redissonClient
+        RedissonClient redissonClient,
+        @Value("${code.config.redis.lock-timeout-in-seconds:120}")
+        Integer lockTimeoutInSeconds
     ) {
         super(
             Payload.class,
             connectorConfig.getProcessorConfig(),
             eventHandler,
-            getLockingMechanism(connectorConfig.getProcessorConfig(), redissonClient)
+            getLockingMechanism(connectorConfig.getProcessorConfig(), redissonClient, lockTimeoutInSeconds)
         );
         this.cdcProcessorDelegateContainer = cdcProcessorDelegateContainer;
     }
@@ -40,13 +43,19 @@ public class EmbeddedRecordProcessor extends RecordProcessor<Payload> {
     }
 
 
-    private static LockingMechanism<Payload> getLockingMechanism(ProcessorConfig processorConfig, RedissonClient redissonClient) {
-        switch (processorConfig.getSync()) {
-            case REDIS:
-                return new RedisLockingMechanism<>(redissonClient);
-            case RAFT:
-            default:
-                log.warn("Unknown Sync Mechanism: {}", processorConfig.getSync());
+    private static LockingMechanism<Payload> getLockingMechanism(
+        ProcessorConfig processorConfig,
+        RedissonClient redissonClient,
+        Integer lockTimeoutInSeconds
+    ) {
+        if (processorConfig.getSync() != null) {
+            switch (processorConfig.getSync()) {
+                case REDIS:
+                    return new RedisLockingMechanism<>(redissonClient, lockTimeoutInSeconds);
+                case RAFT:
+                default:
+                    log.warn("Unknown Sync Mechanism: {}", processorConfig.getSync());
+            }
         }
 
         return new NoOpLockingMechanism<>();

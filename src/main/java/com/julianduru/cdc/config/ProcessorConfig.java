@@ -23,9 +23,9 @@ public class ProcessorConfig {
 
     private Integer maxRetries;
 
-    private String retryTopic;
+    private String retryTopicSuffix;
 
-    private String dlTopic;
+    private String dlTopicSuffix;
 
 
     public enum Sync {
@@ -64,10 +64,10 @@ public class ProcessorConfig {
         }
 
         if (getEngine() == Engine.KAFKA) {
-            if (retryTopic == null) {
+            if (retryTopicSuffix == null) {
                 throw new IllegalStateException("Retry Topic is required for Kafka Engine");
             }
-            if (dlTopic == null) {
+            if (dlTopicSuffix == null) {
                 throw new IllegalStateException("Dead Letter Topic is required for Kafka Engine");
             }
             if (maxRetries == null) {

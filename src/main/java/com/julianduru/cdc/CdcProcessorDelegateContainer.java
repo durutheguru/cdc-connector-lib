@@ -31,24 +31,24 @@ public class CdcProcessorDelegateContainer {
 
     public void doHandle(Payload payload) {
         var reference = payload.hash();
-        var response = query(reference, payload);
+        var response = query(payload);
         log.debug("Querying Message Reference: {}. Response: {}", reference, response);
 
         if (response.getStatus().isTryable()) {
-            process(reference, payload);
+            process(payload);
         }
     }
 
 
-    private OperationStatus query(String reference, Payload payload) {
+    private OperationStatus query(Payload payload) {
         CdcProcessorDelegate delegate = getDelegateForPayload(payload).get();
-        return delegate.query(reference, payload);
+        return delegate.query(payload);
     }
 
 
-    private void process(String reference, Payload payload) {
+    private void process(Payload payload) {
         CdcProcessorDelegate delegate = getDelegateForPayload(payload).get();
-        delegate.process(reference, payload);
+        delegate.process(payload);
     }
 
 

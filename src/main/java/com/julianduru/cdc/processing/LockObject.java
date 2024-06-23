@@ -18,7 +18,7 @@ public class LockObject<T> {
 
     private Hashable hashable;
 
-    private MessageRecord<T> messageRecord;
+    private MessageRecord<T> record;
 
     private Consumer<MessageRecord<T>> consumer;
 

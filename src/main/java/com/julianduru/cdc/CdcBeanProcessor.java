@@ -57,13 +57,13 @@ public class CdcBeanProcessor implements BeanPostProcessor {
         Class<?> beanClass = bean.getClass();
 
         try {
-            var queryMethod = getMethod(ChangeConsumer.QUERY_METHOD_NAME, bean, beanClass);
-            var processMethod = getMethod(ChangeConsumer.PROCESS_METHOD_NAME, bean, beanClass);
+            var queryMethod = getMethod(ChangeConsumer.QUERY_METHOD_NAME, bean, beanClass, false);
+            var processMethod = getMethod(ChangeConsumer.PROCESS_METHOD_NAME, bean, beanClass, true);
 
             validateMethodReturnType(queryMethod, processMethod);
             doRegistration(
                 consumer, bean,
-                queryMethod.isEmpty() ? null : queryMethod.get(),
+                queryMethod.orElse(null),
                 processMethod.get()
             );
         } catch (NoSuchMethodException ex) {
@@ -78,14 +78,18 @@ public class CdcBeanProcessor implements BeanPostProcessor {
     }
 
 
-    private Optional<Method> getMethod(String methodName, Object bean, Class<?> beanClass) {
+    private Optional<Method> getMethod(String methodName, Object bean, Class<?> beanClass, boolean throwError) throws NoSuchMethodException {
         try {
             return Optional.of(
                 beanClass.getMethod(
-                    methodName, String.class, Payload.class
+                    methodName, Payload.class
                 )
             );
         } catch (NoSuchMethodException ex) {
+            if (throwError) {
+                throw ex;
+            }
+
             log.debug("No {} method declared on consumer: {}", methodName, bean.getClass().getName());
             return Optional.empty();
         }
@@ -128,24 +132,24 @@ public class CdcBeanProcessor implements BeanPostProcessor {
 
 
                 @Override
-                public OperationStatus query(String reference, Payload payload) {
+                public OperationStatus query(Payload payload) {
                     if (queryMethod != null) {
                         try {
-                            return (OperationStatus) queryMethod.invoke(bean, reference, payload);
+                            return (OperationStatus) queryMethod.invoke(bean, payload);
                         } catch (Throwable t) {
                             log.error(t.getMessage(), t);
                             return OperationStatus.inProgress(t.getMessage());
                         }
                     } else {
-                        return queryHandlerContainer.defaultQueryHandler(reference, payload);
+                        return queryHandlerContainer.defaultQueryHandler(payload);
                     }
                 }
 
 
                 @Override
-                public void process(String reference, Payload payload) {
+                public void process(Payload payload) {
                     try {
-                        processMethod.invoke(bean, reference, payload);
+                        processMethod.invoke(bean, payload);
                     } catch (Throwable t) {
                         log.error(t.getMessage(), t);
                         throw new RuntimeException(t);

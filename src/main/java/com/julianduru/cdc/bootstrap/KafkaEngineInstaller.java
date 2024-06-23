@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -59,6 +60,11 @@ public class KafkaEngineInstaller implements EngineInstaller {
 
 
     private void setupSourceConnectors(ConnectorConfig connectorConfig) {
+        if (connectorConfig.getSourceConnectors() == null || connectorConfig.getSourceConnectors().isEmpty()) {
+            log.info("No source connectors to setup");
+            return;
+        }
+
         connectorConfig
             .getSourceConnectors()
             .forEach(
@@ -104,7 +110,7 @@ public class KafkaEngineInstaller implements EngineInstaller {
             endpoint.setBean(consumer);
             endpoint.setTopics(topics);
             endpoint.setMessageHandlerMethodFactory(new DefaultMessageHandlerMethodFactory());
-            endpoint.setMethod(consumer.getClass().getMethod("consume", ConsumerRecord.class));
+            endpoint.setMethod(consumer.getClass().getMethod("consume", List.class));
             endpoint.setBatchListener(processorConfig.isBatch());
 
             Properties consumerProperties = new Properties();
