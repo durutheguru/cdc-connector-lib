@@ -4,71 +4,79 @@ code.config.connector:
   url: http://localhost:8083
 
   source-connectors:
-    - name: cdc_connector
-      config:
-        connector.class: io.debezium.connector.mysql.MySqlConnector
-        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
-        offset.storage.file.filename: /tmp/offsets.dat
-        tasks.max: 1
-        database.hostname: localhost
-        database.port: 33080
-        database.user: root
-        database.password: 1234567890
-        database.allowPublicKeyRetrieval: true
-        database.server.id: 5
-        database.server.name: ${code.config.connector.source-connectors[0].name}
-        database.connectionTimeZone: 'UTC'
-        topic.prefix: ${code.config.connector.source-connectors[0].name}
-        database.include.list: employee
-        table.include.list: employee.user
-        numeric.mapping: best_fit
-        value.converter: org.apache.kafka.connect.json.JsonConverter
-        value.converter.schemas.enable: false
-        include.schema.changes: true
-        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
-        schema.history.internal.file.filename: /tmp/schema_history.dat
-      disable-default-consumer: false
-
 #    - name: cdc_connector
 #      config:
 #        connector.class: io.debezium.connector.mysql.MySqlConnector
+#        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+#        offset.storage.file.filename: /tmp/offsets0.dat
 #        tasks.max: 1
-#        database.hostname: mysqldb
-#        database.port: 3306
+#        database.hostname: localhost
+#        database.port: 33080
 #        database.user: root
 #        database.password: 1234567890
 #        database.allowPublicKeyRetrieval: true
-#        database.server.id: 1
+#        database.server.id: 5
 #        database.server.name: ${code.config.connector.source-connectors[0].name}
 #        database.connectionTimeZone: 'UTC'
 #        topic.prefix: ${code.config.connector.source-connectors[0].name}
 #        database.include.list: employee
 #        table.include.list: employee.user
-#        database.history.kafka.bootstrap.servers: kafka:9092
-#        database.history.kafka.topic: "schema-changes.${code.config.connector.source-connectors[0].name}"
 #        numeric.mapping: best_fit
 #        value.converter: org.apache.kafka.connect.json.JsonConverter
 #        value.converter.schemas.enable: false
-#        include.schema.changes: true
-#        schema.history.internal.kafka.bootstrap.servers: kafka:9092
-#        schema.history.internal.kafka.topic: "schema-changes.${code.config.connector.source-connectors[0].name}"
+#        include.schema.changes: false
+#        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+#        schema.history.internal.file.filename: /tmp/schema_history.dat
 #      disable-default-consumer: false
 
-#  sink-connectors:
-#    - name: sink_connector
-#      config:
-#        connectorType: JDBC_SINK
-#        topics: cdc_connector.employee.user
-#        url: "jdbc:postgresql://postgres:5432/employee_database_sink"
-#        username: postgres
-#        password: password
+
+      - name: cdc_connector
+        config:
+          connector.class: io.debezium.connector.mysql.MySqlConnector
+          offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+          offset.storage.file.filename: /tmp/offsets1.dat
+          tasks.max: 1
+          database.hostname: mysqldb
+          database.port: 3306
+          database.user: root
+          database.password: 1234567890
+          database.allowPublicKeyRetrieval: true
+          database.server.id: 5
+          database.server.name: ${code.config.connector.source-connectors[0].name}
+          database.connectionTimeZone: 'UTC'
+          topic.prefix: ${code.config.connector.source-connectors[0].name}
+          database.include.list: employee
+          table.include.list: employee.user
+          numeric.mapping: best_fit
+          value.converter: org.apache.kafka.connect.json.JsonConverter
+          value.converter.schemas.enable: true
+          include.schema.changes: true
+          schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+          schema.history.internal.file.filename: /tmp/schema_history.dat
+        disable-default-consumer: true
+
+
+  sink-connectors:
+    - name: sink_connector
+      config:
+        connector.class: "io.debezium.connector.jdbc.JdbcSinkConnector"
+        topics: cdc_connector.employee.user
+        connection.url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+        connection.username: postgres
+        connection.password: password
+        tasks.max: 1
+        insert.mode: "upsert"
+        delete.enabled: true
+        primary.key.mode: "record_key"
+        schema.evolution: "basic"
+        database.time_zone: "UTC"
+
 
   processor-config:
     batch: false
     concurrent: true
     threadPoolSize: 10
-    engine: EMBED
-    sync: REDIS
+    engine: KAFKA
     max-retries: 3
     retry-topic-suffix: -retry
     dl-topic-suffix: -dlt

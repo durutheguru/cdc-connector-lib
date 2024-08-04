@@ -7,6 +7,7 @@ import com.julianduru.cdc.config.ProcessorConfig;
 import com.julianduru.cdc.data.Payload;
 import com.julianduru.cdc.processing.EmbeddedRecordProcessor;
 import com.julianduru.cdc.processing.MessageRecord;
+import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
@@ -73,7 +74,7 @@ public class EmbeddedEngineInstaller implements EngineInstaller {
                     processor.process(
                         List.of(
                             new MessageRecord<>(
-                                0, "", null, jsonMapper.readValue(event.value(), Payload.class)
+                                0, "", ((EmbeddedEngineChangeEvent)event).sourceRecord().topic(), jsonMapper.readValue(event.value(), Payload.class)
                             )
                         )
                     );

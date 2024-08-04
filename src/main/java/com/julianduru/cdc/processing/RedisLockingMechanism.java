@@ -1,5 +1,6 @@
 package com.julianduru.cdc.processing;
 
+import com.julianduru.cdc.util.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
@@ -23,40 +24,47 @@ public class RedisLockingMechanism<T> implements LockingMechanism<T> {
     public void lock(LockObject<T> object) {
         try {
             var hash = object.getHashable().hash();
-            initMark(hash);
+            initProcessing(hash, object.getRecord());
 
             var lock = redissonClient.getLock(hash);
             if (
-                lock.tryLock(-1, lockTimeoutInSeconds, TimeUnit.SECONDS) &&
-                    !isMarked(hash)
+                !isProcessed(hash) && lock.tryLock(-1, lockTimeoutInSeconds, TimeUnit.SECONDS)
             ) {
                 object.getConsumer().accept(object.getRecord());
-                mark(hash);
+                doneProcessing(hash);
             } else {
-                log.info("Skipping message with hash: {}. Locked", hash);
+                log.info("Skipping message with hash: {}. Marked or Locked", hash);
             }
         }
         catch (InterruptedException e) {
             log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
 
-    private void initMark(String hash) {
-        var map = redissonClient.getMap(hash);
-        map.putIfAbsent("hash", false);
+    private void initProcessing(String hash, MessageRecord<T> message) {
+        var map = redissonClient.getMap(prefixKey(hash));
+        map.putIfAbsent("processed", false);
+        map.putIfAbsent("data", JSON.stringify(message));
     }
 
 
-    private void mark(String hash) {
-        var map = redissonClient.getMap(hash);
-        map.put("hash", true);
+    private void doneProcessing(String hash) {
+        var map = redissonClient.getMap(prefixKey(hash));
+        map.put("processed", true);
     }
 
 
-    private boolean isMarked(String hash) {
-        var map = redissonClient.getMap(hash);
-        return (Boolean) map.get("hash");
+    private boolean isProcessed(String hash) {
+        var map = redissonClient.getMap(prefixKey(hash));
+        var value = map.get("processed");
+        return value != null ? (Boolean) value : false;
+    }
+
+
+    private String prefixKey(String key) {
+        return "cdc:%s".formatted(key);
     }
 
 

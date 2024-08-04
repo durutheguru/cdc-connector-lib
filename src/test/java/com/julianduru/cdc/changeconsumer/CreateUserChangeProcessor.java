@@ -11,8 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-
-
 @ChangeConsumer(sourceId = "employee.user", changeType = ChangeType.CREATE)
 public class CreateUserChangeProcessor {
 
