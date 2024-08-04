@@ -27,10 +27,10 @@ public interface CdcProcessorDelegate {
     boolean supports(Payload payload);
 
 
-    OperationStatus query(String reference, Payload payload);
+    OperationStatus query(Payload payload);
 
 
-    OperationStatus process(String reference, Payload payload);
+    void process(Payload payload);
 
 
 

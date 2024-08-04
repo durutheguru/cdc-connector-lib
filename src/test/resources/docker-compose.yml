@@ -61,8 +61,6 @@ services:
       - MYSQL_ROOT_PASSWORD=1234567890
     ports:
       - "33080:3306"
-    volumes:
-      - db:/var/lib/mysql
     networks:
       - docker-net
 
@@ -80,7 +78,7 @@ services:
 
 
   connect:
-    image: quay.io/debezium/connect:2.2
+    image: quay.io/debezium/connect:2.6.2.Final
     restart: always
     depends_on:
       - kafka
@@ -100,8 +98,14 @@ services:
       - docker-net
 
 
-volumes:
-  db:
+  redis:
+    image: 'bitnami/redis'
+    environment:
+      - REDIS_PASSWORD=password
+    ports:
+      - '6379:6379'
+    networks:
+      - docker-net
 
 
 networks:

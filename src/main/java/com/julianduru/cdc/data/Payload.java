@@ -1,6 +1,7 @@
 package com.julianduru.cdc.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.julianduru.cdc.processing.Hashable;
 import com.julianduru.cdc.util.HashUtil;
 import lombok.Data;
 
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Payload {
+public class Payload implements Hashable {
 
 
     Map<String, Object> before;

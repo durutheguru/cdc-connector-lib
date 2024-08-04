@@ -74,9 +74,6 @@ class CdcConnectorLibApplicationTests extends BaseServiceIntegrationTest {
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
-		finally {
-			log.info("Bootstrap Server: " + SourceConnector.KAFKA_BOOTSTRAP_SERVERS_OVERRIDE);
-		}
 
 		if ("true".equalsIgnoreCase(System.getenv("INSPECTION_ENABLED"))) {
 			Thread.currentThread().join();

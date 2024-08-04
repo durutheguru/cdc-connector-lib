@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class DefaultQueryHandlerContainer {
 
 
-    public OperationStatus defaultQueryHandler(String reference, Payload payload) {
+    public OperationStatus defaultQueryHandler(Payload payload) {
         return OperationStatus.pending();
     }
 

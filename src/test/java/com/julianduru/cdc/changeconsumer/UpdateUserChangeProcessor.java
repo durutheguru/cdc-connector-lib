@@ -6,7 +6,7 @@ import com.julianduru.cdc.annotation.ChangeConsumer;
 import com.julianduru.cdc.data.ChangeType;
 import com.julianduru.cdc.data.OperationStatus;
 import com.julianduru.cdc.data.Payload;
-import com.julianduru.cdc.util.JSONUtil;
+import com.julianduru.cdc.util.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,14 +26,14 @@ public class UpdateUserChangeProcessor {
     private final DataCaptureMap dataCaptureMap;
 
 
-    public OperationStatus process(String reference, Payload payload) {
-        log.info("Payload: {}", JSONUtil.asJsonString(payload, ""));
+    public OperationStatus process(Payload payload) {
+        log.info("Payload: {}", JSON.stringify(payload, ""));
 
         if (failureCount.getAndIncrement() < 3) {
             return OperationStatus.failure();
         }
         else {
-            dataCaptureMap.put(reference, payload);
+            dataCaptureMap.put(payload.hash(), payload);
             failureCount.set(0);
             return OperationStatus.success();
         }

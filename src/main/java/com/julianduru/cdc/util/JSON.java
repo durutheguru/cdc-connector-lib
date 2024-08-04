@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * created by julian
  */
-public class JSONUtil {
+public class JSON {
 
     static ObjectMapper objectMapper;
 
@@ -30,12 +30,16 @@ public class JSONUtil {
     }
 
 
-    public static String asJsonString(Object obj) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(obj);
+    public static String stringify(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
     }
 
 
-    public static String asJsonString(Object obj, String defaultString) {
+    public static String stringify(Object obj, String defaultString) {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {

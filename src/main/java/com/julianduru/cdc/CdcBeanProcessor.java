@@ -37,8 +37,7 @@ public class CdcBeanProcessor implements BeanPostProcessor {
             }
 
             return bean;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -51,7 +50,6 @@ public class CdcBeanProcessor implements BeanPostProcessor {
 
 
     /**
-     *
      * @param bean
      */
     private void registerConsumer(Object bean) throws Exception {
@@ -59,25 +57,20 @@ public class CdcBeanProcessor implements BeanPostProcessor {
         Class<?> beanClass = bean.getClass();
 
         try {
-            var queryMethod = getQueryMethod(bean);
-            var processMethod = Optional.of(
-                beanClass.getMethod(
-                    ChangeConsumer.PROCESS_METHOD_NAME, String.class, Payload.class
-                )
-            );
+            var queryMethod = getMethod(ChangeConsumer.QUERY_METHOD_NAME, bean, beanClass, false);
+            var processMethod = getMethod(ChangeConsumer.PROCESS_METHOD_NAME, bean, beanClass, true);
 
             validateMethodReturnType(queryMethod, processMethod);
             doRegistration(
                 consumer, bean,
-                queryMethod.isEmpty() ? null : queryMethod.get(),
+                queryMethod.orElse(null),
                 processMethod.get()
             );
-        }
-        catch (NoSuchMethodException ex) {
+        } catch (NoSuchMethodException ex) {
             throw new IllegalStateException(
                 String.format(
                     "Consumer {%s} must have a process method. Supported signatures: %n" +
-                    "- OperationStatus process(String reference, Payload payload)%n%n",
+                        "- OperationStatus process(String reference, Payload payload)%n%n",
                     beanClass.getName()
                 )
             );
@@ -85,24 +78,26 @@ public class CdcBeanProcessor implements BeanPostProcessor {
     }
 
 
-    private Optional<Method> getQueryMethod(Object bean) {
+    private Optional<Method> getMethod(String methodName, Object bean, Class<?> beanClass, boolean throwError) throws NoSuchMethodException {
         try {
-            Class<?> beanClass = bean.getClass();
             return Optional.of(
                 beanClass.getMethod(
-                    ChangeConsumer.QUERY_METHOD_NAME, String.class, Payload.class
+                    methodName, Payload.class
                 )
             );
-        }
-        catch (NoSuchMethodException ex) {
-            log.debug("No query method declared on consumer: {}. Applying default", bean.getClass().getName());
+        } catch (NoSuchMethodException ex) {
+            if (throwError) {
+                throw ex;
+            }
+
+            log.debug("No {} method declared on consumer: {}", methodName, bean.getClass().getName());
             return Optional.empty();
         }
     }
 
 
-    private void validateMethodReturnType(Optional<Method>...methodOptionals) {
-        for (Optional<Method> methodOptional: methodOptionals) {
+    private void validateMethodReturnType(Optional<Method>... methodOptionals) {
+        for (Optional<Method> methodOptional : methodOptionals) {
             if (methodOptional.isEmpty()) {
                 continue;
             }
@@ -137,30 +132,27 @@ public class CdcBeanProcessor implements BeanPostProcessor {
 
 
                 @Override
-                public OperationStatus query(String reference, Payload payload) {
+                public OperationStatus query(Payload payload) {
                     if (queryMethod != null) {
                         try {
-                            return (OperationStatus) queryMethod.invoke(bean, reference, payload);
-                        }
-                        catch (Throwable t) {
+                            return (OperationStatus) queryMethod.invoke(bean, payload);
+                        } catch (Throwable t) {
                             log.error(t.getMessage(), t);
                             return OperationStatus.inProgress(t.getMessage());
                         }
-                    }
-                    else {
-                        return queryHandlerContainer.defaultQueryHandler(reference, payload);
+                    } else {
+                        return queryHandlerContainer.defaultQueryHandler(payload);
                     }
                 }
 
 
                 @Override
-                public OperationStatus process(String reference, Payload payload) {
+                public void process(Payload payload) {
                     try {
-                        return (OperationStatus) processMethod.invoke(bean, reference, payload);
-                    }
-                    catch (Throwable t) {
+                        processMethod.invoke(bean, payload);
+                    } catch (Throwable t) {
                         log.error(t.getMessage(), t);
-                        return OperationStatus.inProgress(t.getMessage());
+                        throw new RuntimeException(t);
                     }
                 }
 
@@ -171,12 +163,10 @@ public class CdcBeanProcessor implements BeanPostProcessor {
                         //TODO: cache 'supports' method to avoid always using reflection and depending on NoSuchMethodException..
                         Method method = bean.getClass().getMethod(ChangeConsumer.SUPPORTS_PAYLOAD_METHOD_NAME, Payload.class);
                         return (Boolean) method.invoke(bean, payload);
-                    }
-                    catch (NoSuchMethodException e) {
+                    } catch (NoSuchMethodException e) {
                         log.debug("No supports payload method declared on consumer: {}. Applying default", bean.getClass().getName());
                         return CdcProcessorDelegate.DEFAULT_SUPPORTS_PAYLOAD_PREDICATE.test(this, payload);
-                    }
-                    catch (Throwable t) {
+                    } catch (Throwable t) {
                         log.error(t.getMessage(), t);
                         return false;
                     }

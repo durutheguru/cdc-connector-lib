@@ -1,6 +1,8 @@
 package com.julianduru.cdc.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
@@ -8,10 +10,11 @@ import java.util.Map;
  * created by Julian Dumebi Duru on 07/06/2023
  */
 @Data
+@RequiredArgsConstructor
 public class ConnectorRequest {
 
-    protected String name;
+    protected final String name;
 
-    protected Map<String, String> config;
+    protected final Map<String, String> config;
 
 }
