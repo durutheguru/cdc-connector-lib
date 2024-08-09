@@ -76,7 +76,8 @@ code.config.connector:
     batch: false
     concurrent: true
     threadPoolSize: 10
-    engine: KAFKA
+    engine: KAFKA # KAFKA | EMBED
+#    sync: REDIS | RAFT
     max-retries: 3
     retry-topic-suffix: -retry
     dl-topic-suffix: -dlt
