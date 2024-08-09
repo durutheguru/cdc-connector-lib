@@ -89,28 +89,49 @@ Consider a scenario where the Analytics service and RM service need to be notifi
 ```
 code.config.connector:
   url: http://localhost:8083
+  
   source-connectors:
-    - name: cdc_connector
-      connectorType: MYSQL_SOURCE
-      databaseHost: mysqldb
-      databasePort: 3306
-      databaseUsername: root
-      databasePassword: 1234567890
-      databaseIncludeList:
-        - employee
-      tableIncludeList:
-        - employee.user
-      kafkaBootstrapServers:
-        - kafka:9092
-      includeSchemas: true
-      disableDefaultConsumer: true
+     - name: cdc_connector
+        config:
+          connector.class: io.debezium.connector.mysql.MySqlConnector
+          offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+          offset.storage.file.filename: /tmp/offsets1.dat
+          tasks.max: 1
+          database.hostname: mysqldb
+          database.port: 3306
+          database.user: root
+          database.password: 1234567890
+          database.allowPublicKeyRetrieval: true
+          database.server.id: 5
+          database.server.name: ${code.config.connector.source-connectors[0].name}
+          database.connectionTimeZone: 'UTC'
+          topic.prefix: ${code.config.connector.source-connectors[0].name}
+          database.include.list: employee
+          table.include.list: employee.user
+          numeric.mapping: best_fit
+          value.converter: org.apache.kafka.connect.json.JsonConverter
+          value.converter.schemas.enable: true
+          include.schema.changes: true
+          schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+          schema.history.internal.file.filename: /tmp/schema_history.dat
+        disable-default-consumer: true
+
+
   sink-connectors:
     - name: sink_connector
-      connectorType: JDBC_SINK
-      topics: cdc_connector.employee.user
-      url: "jdbc:mysql://mysqldb:3306/employee_database_sink?createDatabaseIfNotExist=true&serverTimezone=UTC"
-      username: root
-      password: 1234567890
+      config:
+        connector.class: "io.debezium.connector.jdbc.JdbcSinkConnector"
+        topics: cdc_connector.employee.user
+        connection.url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+        connection.username: postgres
+        connection.password: password
+        tasks.max: 1
+        insert.mode: "upsert"
+        delete.enabled: true
+        primary.key.mode: "record_key"
+        schema.evolution: "basic"
+        database.time_zone: "UTC"
+
 
 ```
 
@@ -125,20 +146,14 @@ The CDC-Connector-Lib picks up your configurations and posts them to the connect
 public class CreateUserChangeProcessor {
 
 
-    public OperationStatus query(String reference, Payload payload) {
-        // handle query logic
-        return OperationStatus.pending();
-    }
-
-
-    public OperationStatus process(String reference, Payload payload) {
-        // handle processing logic
+    public OperationStatus process(Payload payload) {
+        log.debug("New User inserted: {}", JSON.stringify(payload));
+        // handle logic for inserted user
         return OperationStatus.success();
     }
 
 
 }
-
 ```
 
 The above consumer will listen for new users CREATED in employee database. The cdc-connector-lib will first query the consumer with the reference and payload before calling process method. The consumer is retried until an OperationStatus.success() is returned.
@@ -171,19 +186,29 @@ code.config.connector:
   url: http://localhost:8083
   source-connectors:
     - name: cdc_connector
-      connectorType: MYSQL_SOURCE
-      databaseHost: mysqldb
-      databasePort: 3306
-      databaseUsername: root
-      databasePassword: 1234567890
-      databaseIncludeList:
-        - employee
-      tableIncludeList:
-        - employee.user
-      kafkaBootstrapServers:
-        - kafka:9092
-      includeSchemas: true
-      disableDefaultConsumer: true
+      config:
+        connector.class: io.debezium.connector.mysql.MySqlConnector
+        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+        offset.storage.file.filename: /tmp/offsets1.dat
+        tasks.max: 1
+        database.hostname: mysqldb
+        database.port: 3306
+        database.user: root
+        database.password: 1234567890
+        database.allowPublicKeyRetrieval: true
+        database.server.id: 5
+        database.server.name: ${code.config.connector.source-connectors[0].name}
+        database.connectionTimeZone: 'UTC'
+        topic.prefix: ${code.config.connector.source-connectors[0].name}
+        database.include.list: employee
+        table.include.list: employee.user
+        numeric.mapping: best_fit
+        value.converter: org.apache.kafka.connect.json.JsonConverter
+        value.converter.schemas.enable: true
+        include.schema.changes: true
+        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+        schema.history.internal.file.filename: /tmp/schema_history.dat
+      disable-default-consumer: true
 ```
 
 For every table in the tableIncludeList, the connector will create topic of the format:
@@ -191,22 +216,28 @@ For every table in the tableIncludeList, the connector will create topic of the 
 			{connector_name}.{database_name}.{table_name}
 
 Setting up this configuration will cause the connector to create topic `cdc_connector.employee.user` on kafka which will house the change updates from the user table.
-The `includeSchemas` config is important so schema data is included in the messages streamed to kakfa, this will allow the sink handler to properly replicate the events at the destination.
+The `include.schemas.changes` config is important so schema data is included in the messages streamed to kakfa, this will allow the sink handler to properly replicate the events at the destination.
 The `disableDefaultConsumer` config is important so connector lib will not bother creating a consumer for the change events, since we plan to replicate the events to a sink without consuming ourselves.
 
 
 	Here's what the Sink configuration looks like: 
 ```
-
 code.config.connector:
   url: http://localhost:8083
   sink-connectors:
-    - name: sink_connector
-      connectorType: JDBC_SINK
+  - name: sink_connector
+    config:
+      connector.class: "io.debezium.connector.jdbc.JdbcSinkConnector"
       topics: cdc_connector.employee.user
-      url: "jdbc:mysql://mysqldb:3306/employee_database_sink?createDatabaseIfNotExist=true&serverTimezone=UTC"
-      username: root
-      password: 1234567890
+      connection.url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+      connection.username: postgres
+      connection.password: password
+      tasks.max: 1
+      insert.mode: "upsert"
+      delete.enabled: true
+      primary.key.mode: "record_key"
+      schema.evolution: "basic"
+      database.time_zone: "UTC"
 ```
 
 The topic referenced must correspond to the topic name which will hold the events from the source config. Hence we have `cdc_connector.employee.user`.
@@ -226,18 +257,30 @@ Updates to employee database are automatically replicated to employee_database_s
 code.config.connector:
   url: http://localhost:8083
   source-connectors:
-    - name: cdc_connector
-      connectorType: MYSQL_SOURCE
-      databaseHost: mysqldb
-      databasePort: 3306
-      databaseUsername: root
-      databasePassword: 1234567890
-      databaseIncludeList:
-        - employee
-      tableIncludeList:
-        - employee.user
-      kafkaBootstrapServers:
-        - kafka:9092
+  - name: cdc_connector
+    config:
+      connector.class: io.debezium.connector.mysql.MySqlConnector
+      offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+      offset.storage.file.filename: /tmp/offsets0.dat
+      tasks.max: 1
+      database.hostname: localhost
+      database.port: 33080
+      database.user: root
+      database.password: 1234567890
+      database.allowPublicKeyRetrieval: true
+      database.server.id: 5
+      database.server.name: ${code.config.connector.source-connectors[0].name}
+      database.connectionTimeZone: 'UTC'
+      topic.prefix: ${code.config.connector.source-connectors[0].name}
+      database.include.list: employee
+      table.include.list: employee.user
+      numeric.mapping: best_fit
+      value.converter: org.apache.kafka.connect.json.JsonConverter
+      value.converter.schemas.enable: false
+      include.schema.changes: false
+      schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+      schema.history.internal.file.filename: /tmp/schema_history.dat
+    disable-default-consumer: false
 ```
 
 This will read change events from the database into the kafka topic: `cdc_connector.employee.user`.
@@ -261,21 +304,15 @@ Inspect their code to gain an understanding of what they do.
 public class CreateUserChangeProcessor {
 
 
-    private final DataCaptureMap dataCaptureMap;
-
-
-    public OperationStatus query(String reference, Payload payload) {
-        return OperationStatus.pending();
-    }
-
-
-    public OperationStatus process(String reference, Payload payload) {
-        dataCaptureMap.put(reference, payload);
+    public OperationStatus process(Payload payload) {
+        log.debug("New User inserted: {}", JSON.stringify(payload));
+        // handle logic for inserted user
         return OperationStatus.success();
     }
 
 
 }
+
 ```
 
 

@@ -1,6 +1,5 @@
 package com.julianduru.cdc.config;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
