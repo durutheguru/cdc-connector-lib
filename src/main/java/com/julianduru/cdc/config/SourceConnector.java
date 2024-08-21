@@ -17,7 +17,7 @@ public class SourceConnector {
     @NotEmpty(message = "Connector Config should not be empty")
     private final Map<String, String> config;
 
-    private final boolean disableDefaultConsumer;
+    private final boolean enableDefaultConsumer;
 
 
     public ConnectorRequest request() {

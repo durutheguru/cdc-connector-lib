@@ -5,20 +5,14 @@ import com.julianduru.cdc.Consumer;
 import com.julianduru.cdc.config.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.config.MethodKafkaListenerEndpoint;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -77,7 +71,7 @@ public class KafkaEngineInstaller implements EngineInstaller {
 
 
     private void setupCdcTopicConsumers(SourceConnector connector, ProcessorConfig processorConfig) {
-        if (connector.isDisableDefaultConsumer()) {
+        if (!connector.isEnableDefaultConsumer()) {
             log.info("Consumer Disabled for connector with name {}", connector.getName());
             return;
         }

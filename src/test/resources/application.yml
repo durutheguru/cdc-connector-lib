@@ -27,7 +27,7 @@ code.config.connector:
 #        include.schema.changes: false
 #        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
 #        schema.history.internal.file.filename: /tmp/schema_history.dat
-#      disable-default-consumer: false
+#      enable-default-consumer: true
 
 
       - name: cdc_connector
@@ -53,7 +53,7 @@ code.config.connector:
           include.schema.changes: true
           schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
           schema.history.internal.file.filename: /tmp/schema_history.dat
-        disable-default-consumer: true
+        enable-default-consumer: false
 
 
   sink-connectors:
@@ -85,7 +85,7 @@ code.config.connector:
 
 logging:
   level:
-    root: INFO
+    root: DEBUG
 
 
 queue:
