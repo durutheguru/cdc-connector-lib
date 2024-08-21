@@ -85,7 +85,7 @@ code.config.connector:
 
 logging:
   level:
-    root: INFO
+    root: DEBUG
 
 
 queue:

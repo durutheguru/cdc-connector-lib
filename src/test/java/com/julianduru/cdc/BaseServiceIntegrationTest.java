@@ -1,6 +1,6 @@
 package com.julianduru.cdc;
 
-import com.github.javafaker.Faker;
+import net.datafaker.Faker;
 
 import com.julianduru.cdc.config.ConnectorConfig;
 import com.julianduru.cdc.config.TestConfig;
@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * created by Julian Duru on 27/02/2023
@@ -20,7 +22,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith({SpringExtension.class})
 @SpringBootTest(
     classes = {
-        TestConfig.class
+        TestConfig.class,
+        CdcConnectorLibAutoConfiguration.class,
     }
 )
 public abstract class BaseServiceIntegrationTest {
@@ -30,7 +33,7 @@ public abstract class BaseServiceIntegrationTest {
 
     protected Faker faker = new Faker();
 
-    protected static TestDockerComposeContainer dockerComposeContainer = new TestDockerComposeContainer();
+    static TestDockerComposeContainer dockerComposeContainer = new TestDockerComposeContainer();
 
 
     static {

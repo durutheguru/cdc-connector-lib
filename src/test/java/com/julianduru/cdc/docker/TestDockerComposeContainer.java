@@ -1,7 +1,9 @@
 package com.julianduru.cdc.docker;
 
 import com.julianduru.cdc.config.TestConfig;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
@@ -16,9 +18,10 @@ public class TestDockerComposeContainer extends DockerComposeContainer {
 
 
     public TestDockerComposeContainer() {
-        super(new File("src/main/resources/docker-compose.yml"));
+        super(new File("src/test/resources/docker-compose.yml"));
 
         this.enabled = TestConfig.testContainersEnabled();
+
         withExposedService(
             "mysqldb_1", 33080,
             Wait.forHealthcheck()
@@ -41,9 +44,11 @@ public class TestDockerComposeContainer extends DockerComposeContainer {
                 .withStartupTimeout(Duration.ofSeconds(600))
         );
         withTailChildContainers(true);
+//        withLogConsumer("", new Slf4jLogConsumer(LoggerFactory.getLogger("TestDockerComposeContainer")))
     }
 
 
+    @Override
     public void start() {
         if (enabled) {
             super.start();
