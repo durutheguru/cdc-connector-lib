@@ -21,9 +21,13 @@ public class KafkaConsumer implements Consumer {
     private final KafkaEngineProcessor kafkaEngineProcessor;
 
 
+    @Override
+    public void consume(ConsumerRecord<String, String> record) {
+        consumeList(List.of(record));
+    }
 
     @Override
-    public void consume(List<ConsumerRecord<String, String>> records) {
+    public void consumeList(List<ConsumerRecord<String, String>> records) {
         try {
             var topic = records.getFirst().topic();
             log.info("CdcConsumer - Received {} messages from topic: {}", records.size(), topic);
