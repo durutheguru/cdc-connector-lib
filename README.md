@@ -5,8 +5,10 @@
 The Connector Lib is a library and hence is meant to be included as part of an application program or service. To get a 
 feel of how it works. You can run the tests while enabling peek_mode. 
 
+To run the tests in peek mode, simply set environment variable `PEEK_MODE=enable`. 
 
-##### Configuration
+
+##### Overview
 
 - Easy configurations to start streaming change events from a datasource.
   Here's a Sample config to synchronize change updates from one datasource to another:
@@ -93,10 +95,11 @@ For the sake of our further understanding, let's define 3 types of entities. Sou
 
 **Processor**: A processor subscribes to change events for the purpose of carrying out some action based on the event that has occurred.
 
-**Sink**: A sink is a destination for change events. A Sink subscribes to one or more cdc topics and replicates change events on its own side.
+**Sink**: A sink is a destination for change events.
 
 
 <br />
+
 
 ### Example Patterns and Configurations
 - Sync Database events between 2 databases: In this setup, we have two separate services with different databases. We want to sync database events from one db to the other.

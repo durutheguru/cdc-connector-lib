@@ -1,4 +1,4 @@
-package com.julianduru.cdc.examples.kafka.dbsync;
+package com.julianduru.cdc.examples.kafka;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;

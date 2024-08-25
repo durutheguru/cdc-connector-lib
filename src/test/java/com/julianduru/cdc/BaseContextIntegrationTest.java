@@ -1,12 +1,14 @@
 package com.julianduru.cdc;
 
+import org.junit.jupiter.api.AfterEach;
+
 /**
  *
  */
 public abstract class BaseContextIntegrationTest extends BaseServiceIntegrationTest {
 
 
-    public void peek() {
+    private void peek() {
         try {
             if ("enable".equalsIgnoreCase(System.getenv("PEEK_MODE"))) {
                 Thread.currentThread().join();
@@ -16,5 +18,12 @@ public abstract class BaseContextIntegrationTest extends BaseServiceIntegrationT
             throw new RuntimeException(e);
         }
     }
+
+
+    @AfterEach
+    public void after() {
+        peek();
+    }
+
 
 }

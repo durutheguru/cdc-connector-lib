@@ -7,14 +7,15 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  *
  */
-@ActiveProfiles("kafka-single-event")
-public class SingleEventConsumerTest extends BaseContextIntegrationTest {
+@ActiveProfiles("kafka-batch-event")
+public class BatchEventConsumerTest extends BaseContextIntegrationTest {
 
 
     @Test
-    public void testSingleEventProcessing() {
+    public void testBatchEventProcessing() {
         // TODO: add assertions
     }
 
 
 }
+

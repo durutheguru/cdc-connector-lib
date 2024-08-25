@@ -1,4 +1,4 @@
-package com.julianduru.cdc.examples.kafka.dbsync;
+package com.julianduru.cdc.examples.kafka;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
