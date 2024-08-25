@@ -1,62 +1,93 @@
 
 
-code.config.connector:
-  url: http://localhost:8083
+code.config:
+  connector:
+    url: http://localhost:8083
 
-  source-connectors:
+    source-connectors:
 
-    - name: cdc_connector
-      config:
-        connector.class: io.debezium.connector.mysql.MySqlConnector
-        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
-        offset.storage.file.filename: /tmp/offsets1.dat
-        tasks.max: 1
-        database.hostname: mysqldb
-        database.port: 3306
-        database.user: root
-        database.password: 1234567890
-        database.allowPublicKeyRetrieval: true
-        database.server.id: 5
-        database.server.name: ${code.config.connector.source-connectors[0].name}
-        database.connectionTimeZone: 'UTC'
-        topic.prefix: ${code.config.connector.source-connectors[0].name}
-        database.include.list: employee
-        table.include.list: employee.user
-        numeric.mapping: best_fit
-        value.converter: org.apache.kafka.connect.json.JsonConverter
-        value.converter.schemas.enable: true
-        include.schema.changes: true
-        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
-        schema.history.internal.file.filename: /tmp/schema_history.dat
-      enable-default-consumer: false
+      - name: cdc_connector
+        config:
+          connector.class: io.debezium.connector.mysql.MySqlConnector
+          offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+          offset.storage.file.filename: /tmp/offsets1.dat
+          tasks.max: 1
+          database.hostname: mysqldb
+          database.port: 3306
+          database.user: root
+          database.password: 1234567890
+          database.allowPublicKeyRetrieval: true
+          database.server.id: 5
+          database.server.name: ${code.config.connector.source-connectors[0].name}
+          database.connectionTimeZone: 'UTC'
+          topic.prefix: ${code.config.connector.source-connectors[0].name}
+          database.include.list: employee
+          table.include.list: employee.user
+          numeric.mapping: best_fit
+          value.converter: org.apache.kafka.connect.json.JsonConverter
+          value.converter.schemas.enable: true
+          include.schema.changes: true
+          schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+          schema.history.internal.file.filename: /tmp/schema_history.dat
+        enable-default-consumer: false
 
-  sink-connectors:
-    - name: sink_connector
-      config:
-        connector.class: "io.debezium.connector.jdbc.JdbcSinkConnector"
-        topics: cdc_connector.employee.user
-        connection.url: "jdbc:postgresql://postgres:5432/employee_database_sink"
-        connection.username: postgres
-        connection.password: password
-        tasks.max: 1
-        insert.mode: "upsert"
-        delete.enabled: true
-        primary.key.mode: "record_key"
-        schema.evolution: "basic"
-        database.time_zone: "UTC"
+    sink-connectors:
+      - name: sink_connector
+        config:
+          connector.class: "io.debezium.connector.jdbc.JdbcSinkConnector"
+          topics: cdc_connector.employee.user
+          connection.url: "jdbc:postgresql://postgres:5432/employee_database_sink"
+          connection.username: postgres
+          connection.password: password
+          tasks.max: 1
+          insert.mode: "upsert"
+          delete.enabled: true
+          primary.key.mode: "record_key"
+          schema.evolution: "basic"
+          database.time_zone: "UTC"
 
 
-  processor-config:
-    batch: false
-    concurrent: true
-    threadPoolSize: 10
-    engine: KAFKA
-    max-retries: 3
-    retry-topic-suffix: -retry
-    dl-topic-suffix: -dlt
+    processor-config:
+      batch: false
+      concurrent: true
+      threadPoolSize: 10
+      engine: KAFKA
+      max-retries: 3
+      retry-topic-suffix: -retry
+      dl-topic-suffix: -dlt
 
+  data:
+    source:
+      url: jdbc:mysql://localhost:33080/employee
+      username: root
+      password: 1234567890
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+    sink:
+      url: jdbc:postgresql://localhost:5432/employee_database_sink
+      username: postgres
+      password: password
+      driver-class-name: org.postgresql.Driver
 
 logging:
   level:
     root: INFO
 
+spring:
+  datasource:
+#    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:33080/employee?createDatabaseIfNotExist=true&serverTimezone=UTC%2B1}
+#    username: ${SPRING_DATASOURCE_USERNAME:root}
+#    password: ${SPRING_DATASOURCE_PASSWORD:1234567890}
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+    initialization-mode: always
+#
+#  jpa:
+#    hibernate.ddl-auto: none
+#    show-sql: true
+#    properties:
+#      hibernate.format_sql: true
+#      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+#
+#  sql:
+#    init:
+#      mode: always

@@ -10,7 +10,9 @@ import java.util.List;
 public interface Consumer {
 
 
-    void consume(List<ConsumerRecord<String, String>> record);
+    void consume(ConsumerRecord<String, String> record);
+
+    void consumeList(List<ConsumerRecord<String, String>> records);
 
 
 }

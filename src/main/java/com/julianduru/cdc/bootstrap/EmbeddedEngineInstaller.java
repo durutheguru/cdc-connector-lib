@@ -56,10 +56,10 @@ public class EmbeddedEngineInstaller implements EngineInstaller {
                         engine.run();
                     } catch (IOException e) {
                         log.error(e.getMessage(), e);
-                    }
-                    finally {
                         log.info("Re-initializing connectors");
                         setupSourceConnectors(connectorConfig);
+                    } catch (Exception e){
+                        log.error("Failed to install connectors..", e);
                     }
                 }
             );

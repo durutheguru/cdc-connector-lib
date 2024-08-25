@@ -1,0 +1,46 @@
+
+
+code.config.connector:
+  url: http://localhost:8083
+
+  source-connectors:
+    - name: cdc_connector
+      config:
+        connector.class: io.debezium.connector.mysql.MySqlConnector
+        offset.storage: org.apache.kafka.connect.storage.FileOffsetBackingStore
+        offset.storage.file.filename: /tmp/offsets0.dat
+        tasks.max: 1
+        database.hostname: mysqldb
+        database.port: 3306
+        database.user: root
+        database.password: 1234567890
+        database.allowPublicKeyRetrieval: true
+        database.server.id: 5
+        database.server.name: ${code.config.connector.source-connectors[0].name}
+        database.connectionTimeZone: 'UTC'
+        topic.prefix: ${code.config.connector.source-connectors[0].name}
+        database.include.list: employee
+        table.include.list: employee.user
+        numeric.mapping: best_fit
+        value.converter: org.apache.kafka.connect.json.JsonConverter
+        value.converter.schemas.enable: false
+        include.schema.changes: false
+        schema.history.internal: io.debezium.storage.file.history.FileSchemaHistory
+        schema.history.internal.file.filename: /tmp/schema_history.dat
+      enable-default-consumer: true
+
+  processor-config:
+    batch: false
+    concurrent: true
+    threadPoolSize: 10
+    engine: KAFKA
+    max-retries: 3
+    retry-topic-suffix: -retry
+    dl-topic-suffix: -dlt
+
+
+
+logging:
+  level:
+    org.apache.kafka: OFF
+

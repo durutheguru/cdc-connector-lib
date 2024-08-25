@@ -5,6 +5,7 @@ import com.julianduru.cdc.Consumer;
 import com.julianduru.cdc.config.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
@@ -104,8 +105,12 @@ public class KafkaEngineInstaller implements EngineInstaller {
             endpoint.setBean(consumer);
             endpoint.setTopics(topics);
             endpoint.setMessageHandlerMethodFactory(new DefaultMessageHandlerMethodFactory());
-            endpoint.setMethod(consumer.getClass().getMethod("consume", List.class));
             endpoint.setBatchListener(processorConfig.isBatch());
+            endpoint.setMethod(
+                processorConfig.isBatch() ?
+                    consumer.getClass().getMethod("consumeList", List.class) :
+                consumer.getClass().getMethod("consume", ConsumerRecord.class)
+            );
 
             Properties consumerProperties = new Properties();
             consumerProperties.putAll(kafkaProperties.buildConsumerProperties(null));
