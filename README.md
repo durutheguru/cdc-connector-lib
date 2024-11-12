@@ -73,10 +73,9 @@ The CDC-Connector-Lib picks up your configurations and posts them to the connect
 public class CreateUserChangeProcessor {
 
 
-    public OperationStatus process(Payload payload) {
+    public void process(Payload payload) {
         log.debug("New User inserted: {}", JSON.stringify(payload));
         // handle logic for inserted user
-        return OperationStatus.success();
     }
 
 
@@ -232,10 +231,9 @@ Inspect their code to gain an understanding of what they do.
 public class CreateUserChangeProcessor {
 
 
-    public OperationStatus process(Payload payload) {
+    public void process(Payload payload) {
         log.debug("New User inserted: {}", JSON.stringify(payload));
         // handle logic for inserted user
-        return OperationStatus.success();
     }
 
 
@@ -254,14 +252,8 @@ public class UpdateUserChangeProcessor {
     private final DataCaptureMap dataCaptureMap;
 
 
-    public OperationStatus query(String reference, Payload payload) {
-        return OperationStatus.pending();
-    }
-
-
-    public OperationStatus process(String reference, Payload payload) {
+    public void process(String reference, Payload payload) {
         dataCaptureMap.put(reference, payload);
-        return OperationStatus.success();
     }
 
 
